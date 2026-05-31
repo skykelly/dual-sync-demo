@@ -4,7 +4,7 @@ Use this file to track phase execution.
 
 ## Current Status
 
-- Step 9 complete: Authoring Mode MVP is available at `index.html?view=author` for generating scene JSON with hotspots, time events, and zoom events.
+- Step 10 complete: test checklist validation notes are recorded, and the project remains runnable as local static HTML.
 
 ## Completed Tasks
 
@@ -475,3 +475,38 @@ DONE: 09_authoring_mode_mvp.md
 DONE: 09_authoring_mode_mvp.md
 - Completed at: 2026년  6월  1일 월요일 00시 21분 07초 KST
 
+### Step 10. Test Checklist
+
+Completed on 2026-06-01.
+
+What changed:
+- Added a verification record to `docs/codex-plan/10_test_checklist.md`.
+- Documented automated/static checks that were completed for the checklist phase.
+- Documented manual test items that still require `assets/videos/demo.mp4`, a real browser session, and the actual dual-monitor presentation environment.
+
+Changed files:
+- `docs/codex-plan/10_test_checklist.md`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for all files in `src/*.js` and `data/*.js`.
+- Ran a Node scene validation script confirming scene count, trim ranges, playback rates, explain step references, hotspot coordinates, time event ranges, and zoom event ranges.
+- Rendered Controller, Demo, Explain, and Author views through Node with a stubbed `localStorage`.
+- Started a local static server with `python3 -m http.server 4173`.
+- Confirmed these static routes return `200 OK`:
+  - `http://127.0.0.1:4173/index.html?view=controller`
+  - `http://127.0.0.1:4173/index.html?view=demo`
+  - `http://127.0.0.1:4173/index.html?view=explain`
+  - `http://127.0.0.1:4173/index.html?view=author`
+
+Manual test notes:
+- Full video timeline, hotspot timing, zoom timing, and browser autoplay behavior still need manual verification with a real `assets/videos/demo.mp4` file.
+- Dual-monitor fullscreen behavior must be checked in the actual presentation environment.
+- Existing fallback behavior keeps Demo View runnable when the video file is missing.
+
+Notes:
+- No production dependencies were added.
+- Node module render checks still emit the existing package metadata warning because this static project has no local `package.json` with `"type": "module"`; the checks passed.
+
+DONE: 10_test_checklist.md
+- Completed at: 2026-06-01 00:22:49 KST

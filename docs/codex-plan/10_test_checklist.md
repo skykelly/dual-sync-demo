@@ -80,3 +80,24 @@
 - [ ] 오프라인 상태에서 실행 가능
 - [ ] 영상 파일 경로가 깨지지 않음
 - [ ] 발표 중 브라우저 자동재생 정책 문제 없음
+
+## 11. 검증 기록
+
+Last updated: 2026-06-01 00:22 KST
+
+Automated/static checks completed:
+
+- [x] `node --check` syntax validation for `data/*.js` and `src/*.js`
+- [x] Scene data validation for scene count, trim ranges, explain step references, hotspot coordinates, time events, and zoom events
+- [x] Server route checks returned `200 OK` for:
+  - `index.html?view=controller`
+  - `index.html?view=demo`
+  - `index.html?view=explain`
+  - `index.html?view=author`
+- [x] Node render smoke check for Controller, Demo, Explain, and Author views
+
+Manual test status:
+
+- [ ] Full checklist execution still requires a browser session with `assets/videos/demo.mp4` present.
+- [ ] Dual-monitor fullscreen validation must be performed in the actual presentation environment.
+- [ ] Browser autoplay policy behavior must be verified in the presentation browser/profile.
