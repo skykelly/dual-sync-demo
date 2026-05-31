@@ -312,3 +312,7 @@ DONE: 06_zoom_and_speed.md
 
 DONE: 05_hotspot_interactions.md
 - Completed at: 2026년  6월  1일 월요일 00시 05분 02초 KST
+
+DONE: 06_zoom_and_speed.md
+- Completed at: 2026년  6월  1일 월요일 00시 08분 43초 KST
+
