@@ -4,7 +4,7 @@ Use this file to track phase execution.
 
 ## Current Status
 
-- Step 7 complete: Controller View now works as a presenter console with scene navigation, restart, jump-to-time, speed, hotspot debug, explain step forcing, script notes, and synced video time.
+- Step 8 complete: Sample AI Shopping Agent demo scenario now includes five scenes with time events, explain steps, hotspots, and Scene 3 zoom events.
 
 ## Completed Tasks
 
@@ -365,3 +365,53 @@ DONE: 07_controller_console.md
 DONE: 07_controller_console.md
 - Completed at: 2026년  6월  1일 월요일 00시 12분 30초 KST
 
+### Step 8. Sample Demo Scenario
+
+Completed on 2026-06-01.
+
+What changed:
+- Replaced the previous three-scene sample data with five AI Shopping Agent / Sales AI Team scenes.
+- All scenes use `assets/videos/demo.mp4`.
+- Each scene has a distinct `demo.trim.start` and `demo.trim.end` range.
+- Each scene includes at least two explain steps and at least one `syncExplain` time event.
+- Scene 2 includes hotspot interactions for customer context extraction and installation/budget constraints.
+- Scene 3 includes hotspot interactions for Knowledge Atlas and the recommendation card.
+- Scene 3 includes zoom events that enlarge the recommendation card area and then reset the zoom.
+- Explain copy now covers AI Shopping Agent, Knowledge Atlas, Sales AI Team, online-to-offline handoff, and Sales Copilot messaging.
+
+Changed files:
+- `data/scenes.js`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for all files in `src/*.js` and `data/*.js`.
+- Ran a Node scene validation script confirming:
+  - exactly five scenes exist;
+  - all scenes use `assets/videos/demo.mp4`;
+  - all trims are valid and different;
+  - each scene has at least two explain steps;
+  - each scene has at least one time event;
+  - all time events and hotspot actions point to existing explain step IDs;
+  - Scene 2 and Scene 3 include hotspots;
+  - Scene 3 includes zoom events.
+- Rendered Controller, Demo, and Explain view HTML through Node using Scene 3 and confirmed the views render against the new data.
+- Started a local static server with `python3 -m http.server 4173`.
+- Confirmed these static routes return `200 OK`:
+  - `http://127.0.0.1:4173/index.html?view=controller`
+  - `http://127.0.0.1:4173/index.html?view=demo`
+  - `http://127.0.0.1:4173/index.html?view=explain`
+
+Manual test notes:
+- Open `index.html?view=controller`, `index.html?view=demo`, and `index.html?view=explain` in separate browser windows.
+- In Controller, use the scene list and `Next` / `Prev` to confirm all five scenes render.
+- Click each Explain Step button and confirm Explain View changes to the matching step.
+- Turn on Hotspot Debug and confirm Scene 2 and Scene 3 show hotspot regions.
+- With a valid `assets/videos/demo.mp4`, play Scene 3 and confirm the recommendation card zooms around `41s` and resets around `48s`.
+- Confirm Play, Pause, Restart Scene, Reset Zoom, Jump to Time, speed controls, and direct Explain Step selection still work.
+
+Notes:
+- Node module render checks still emit the existing package metadata warning because this static project has no local `package.json` with `"type": "module"`; the checks passed.
+- No production dependencies were added.
+
+DONE: 08_sample_demo_scenario.md
+- Completed at: 2026-06-01 00:15:13 KST
