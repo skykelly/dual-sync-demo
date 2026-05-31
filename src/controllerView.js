@@ -2,7 +2,8 @@ import { renderShell } from "./viewShell.js";
 
 export function renderControllerView({ scene, scenes, state }) {
   const next = scenes[state.currentStep + 1];
-  const defaultStep = getDefaultExplainStep(scene);
+  const currentExplainStep = getExplainStep(scene, state.currentExplainStepId);
+  const explainSteps = scene.explain?.steps || [];
   const videoStatus = state.videoStatus || {};
 
   return renderShell({
@@ -24,6 +25,20 @@ export function renderControllerView({ scene, scenes, state }) {
           <div class="video-status" aria-label="Demo video status">
             <span>Video ${formatSeconds(videoStatus.currentTime || scene.demo.trim.start)} / ${formatSeconds(videoStatus.duration || scene.demo.trim.end)}</span>
             <span>${videoStatus.isPlaying ? "Playing" : "Paused"}</span>
+            <span>Explain ${currentExplainStep.id || "none"}</span>
+          </div>
+          <div class="explain-control">
+            <h2>Explain Steps</h2>
+            <div class="explain-step-buttons">
+              ${explainSteps.map((step) => `
+                <button
+                  type="button"
+                  class="explain-step-button ${step.id === currentExplainStep.id ? "active" : ""}"
+                  data-action="sync-explain"
+                  data-explain-step-id="${step.id}"
+                >${step.title}</button>
+              `).join("")}
+            </div>
           </div>
           <div class="jump-grid">
             ${scenes.map((item, index) => `
@@ -38,7 +53,7 @@ export function renderControllerView({ scene, scenes, state }) {
         </div>
         <aside class="speaker-note">
           <h2>현재 스크립트</h2>
-          <p>${defaultStep.script}</p>
+          <p>${currentExplainStep.script || ""}</p>
           <h2>다음 장면</h2>
           <p>${next ? next.title : "마지막 장면입니다."}</p>
           <div class="open-links">
@@ -55,6 +70,10 @@ function formatSeconds(seconds) {
   return `${Number(seconds || 0).toFixed(1).replace(".0", "")}s`;
 }
 
-function getDefaultExplainStep(scene) {
-  return scene.explain.steps.find((step) => step.id === scene.explain.defaultStepId) || scene.explain.steps[0] || {};
+function getExplainStep(scene, explainStepId) {
+  const steps = scene.explain?.steps || [];
+  return steps.find((step) => step.id === explainStepId)
+    || steps.find((step) => step.id === scene.explain?.defaultStepId)
+    || steps[0]
+    || {};
 }

@@ -4,7 +4,7 @@ Use this file to track phase execution.
 
 ## Current Status
 
-- Step 3 complete: Demo View now has an HTML5 video timeline engine with trim playback, time events, controller commands, and video time broadcasts.
+- Step 4 complete: Explain View now renders scene explain steps, supports synced explain step changes, and falls back to each scene default step.
 
 ## Completed Tasks
 
@@ -165,3 +165,47 @@ DONE: 03_video_timeline_engine.md
 DONE: 03_video_timeline_engine.md
 - Completed at: 2026년  5월 31일 일요일 23시 57분 39초 KST
 
+### Step 4. Explain View Step Sync
+
+Completed on 2026-06-01.
+
+What changed:
+- Explain View now renders the active `scene.explain.steps` item instead of treating the scene as the only explain unit.
+- `scene.explain.defaultStepId` is used whenever a scene is loaded or an invalid/missing explain step is requested.
+- `SYNC_EXPLAIN` messages update the active explain step, including messages from Demo View time events.
+- Added `GO_TO_SCENE` handling as an alias for scene navigation messages; scene navigation resets Explain View to the default step.
+- Explain View now displays scene title, explain title, subtitle, bullets, key message, speaker script, and a small debug area with scene title and step id.
+- Added a short fade animation when Explain View content renders.
+- Controller View now shows direct explain step selection buttons and updates the speaker script for the active explain step.
+
+Changed files:
+- `src/app.js`
+- `src/controllerView.js`
+- `src/explainView.js`
+- `src/state.js`
+- `styles/styles.css`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for all files in `src/*.js` and `data/*.js`.
+- Rendered Controller and Explain view HTML through Node with a stubbed `localStorage`.
+- Confirmed default explain step rendering, synced step rendering, invalid step fallback to default, debug area rendering, speaker script rendering, and Controller explain step controls.
+- Started a local static server with `python3 -m http.server 4173`.
+- Confirmed these static routes return `index.html` successfully:
+  - `http://127.0.0.1:4173/index.html?view=controller`
+  - `http://127.0.0.1:4173/index.html?view=demo`
+  - `http://127.0.0.1:4173/index.html?view=explain`
+
+Manual test notes:
+- Open `index.html?view=controller`, `index.html?view=demo`, and `index.html?view=explain` in separate browser windows.
+- In Controller, click `Next` or `Prev` and confirm Explain View returns to the new scene's default explain step.
+- In Controller, click each Explain Step button and confirm Explain View changes to that step and the Controller script updates.
+- With a valid `assets/videos/demo.mp4`, play Demo View and confirm timeline `syncExplain` events change Explain View at the configured times.
+- Send or simulate a `SYNC_EXPLAIN` message with a missing `explainStepId` and confirm Explain View falls back to the scene default.
+
+Notes:
+- The in-app Browser connector was attempted for a frontend smoke test, but it reported `Browser is not available: iab`. Static route checks and Node render checks were used instead.
+- Phase commit created with message `phase-04: implement explain step sync`.
+
+DONE: 04_explain_step_sync.md
+- Completed at: 2026-06-01 00:00:46 KST

@@ -15,8 +15,8 @@ const { state } = presentation;
 const sync = createSyncChannel(handleSyncMessage);
 
 function handleSyncMessage(data) {
-  if (data.type === "SET_STEP") {
-    presentation.setStep(data.step);
+  if (data.type === "SET_STEP" || data.type === "GO_TO_SCENE") {
+    presentation.setStep(data.step ?? data.sceneIndex);
     resetVideoForScene();
     render();
   }
@@ -51,7 +51,7 @@ function handleSyncMessage(data) {
   }
 
   if (data.type === "SYNC_EXPLAIN") {
-    if (Number.isFinite(data.sceneIndex)) {
+    if (Number.isFinite(data.sceneIndex) && data.sceneIndex !== state.currentStep) {
       presentation.setStep(data.sceneIndex);
     }
     presentation.setExplainStep(data.explainStepId);
@@ -142,6 +142,7 @@ function renderControllerVideoStatusOnly() {
   videoStatus.innerHTML = `
     <span>Video ${currentTime}s / ${duration}s</span>
     <span>${state.videoStatus?.isPlaying ? "Playing" : "Paused"}</span>
+    <span>Explain ${state.currentExplainStepId || "none"}</span>
   `;
 }
 
@@ -152,6 +153,9 @@ function renderPlaybackStatusOnly() {
 
 function syncExplain(explainStepId, shouldBroadcast = true) {
   presentation.setExplainStep(explainStepId);
+  if (view !== "demo") {
+    render();
+  }
 
   if (shouldBroadcast) {
     sync.broadcast("SYNC_EXPLAIN", {
@@ -207,6 +211,7 @@ app.addEventListener("click", (event) => {
   if (action === "play-toggle") state.isPlaying ? pauseTimer() : startTimer();
   if (action === "reset") resetTimer();
   if (action === "set-step") setStep(Number(control.dataset.step));
+  if (action === "sync-explain") syncExplain(control.dataset.explainStepId);
 });
 
 window.addEventListener("keydown", (event) => {

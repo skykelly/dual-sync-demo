@@ -41,7 +41,7 @@ export function createPresentationState(scenes) {
   function setExplainStep(explainStepId) {
     const scene = scenes[state.currentStep];
     const exists = scene?.explain?.steps?.some((step) => step.id === explainStepId);
-    if (exists) state.currentExplainStepId = explainStepId;
+    state.currentExplainStepId = exists ? explainStepId : getDefaultExplainStepId(scene);
   }
 
   function setVideoStatus(videoStatus) {

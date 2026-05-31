@@ -74,8 +74,17 @@ body[data-view="demo"] .subtitle { color: #c7cbd4; }
 .bullet-list li { font-size: clamp(22px, 2.2vw, 34px); line-height: 1.35; background: var(--soft); border: 1px solid var(--line); border-radius: 24px; padding: 22px 26px; }
 .bullet-list li::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--red); margin-right: 16px; vertical-align: middle; }
 .takeaway { margin-top: 42px; padding: 26px 30px; border-radius: 28px; background: var(--red-soft); color: var(--red); font-size: 28px; font-weight: 900; max-width: 1050px; }
-.explain-step-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; max-width: 1050px; }
-.explain-step-list span { padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; color: #4b5563; background: #fff; font-size: 14px; }
+.explain-hero { position: relative; overflow: hidden; }
+.explain-content { animation: explainFade .24s ease both; }
+.speaker-script { margin-top: 28px; max-width: 1050px; border-top: 1px solid var(--line); padding-top: 20px; color: #30333a; }
+.speaker-script h2 { margin: 0 0 8px; color: var(--red); font-size: 16px; text-transform: uppercase; letter-spacing: 0; }
+.speaker-script p { margin: 0; font-size: 20px; line-height: 1.55; color: #30333a; }
+.explain-debug { position: absolute; right: 28px; bottom: 24px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: min(720px, calc(100% - 56px)); color: #4b5563; }
+.explain-debug span { border: 1px solid var(--line); background: rgba(255,255,255,.9); padding: 7px 9px; border-radius: 6px; font-size: 12px; }
+@keyframes explainFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .controller-layout { flex: 1; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr); gap: 24px; padding: 28px; }
 .controller-main, .speaker-note { background: white; border: 1px solid var(--line); border-radius: 30px; padding: 34px; box-shadow: 0 18px 60px rgba(15,17,23,.08); }
@@ -86,6 +95,11 @@ button, .open-links a { appearance: none; border: 1px solid var(--line); backgro
 button.primary { background: var(--red); color: white; border-color: var(--red); }
 .video-status { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; color: #4b5563; }
 .video-status span { border: 1px solid var(--line); background: var(--soft); padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+.explain-control { margin-top: 28px; }
+.explain-control h2 { margin: 0 0 12px; font-size: 18px; color: var(--red); }
+.explain-step-buttons { display: grid; gap: 10px; }
+.explain-step-button { text-align: left; border-radius: 8px; padding: 12px 14px; font-size: 14px; line-height: 1.35; }
+.explain-step-button.active { border-color: var(--red); background: var(--red-soft); color: var(--red); }
 .jump-grid { display: grid; gap: 12px; margin-top: 30px; }
 .jump { text-align: left; }
 .jump.active { border-color: var(--red); background: var(--red-soft); color: var(--red); }
