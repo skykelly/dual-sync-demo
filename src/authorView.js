@@ -1,12 +1,30 @@
+import { videos } from "../data/videos.js";
 import { renderShell } from "./viewShell.js";
 
+const firstVideo = normalizeVideo(videos[0]);
+
 const authorState = {
-  videoSrc: "assets/videos/demo.mp4",
+  videoSrc: firstVideo.src || "assets/videos/demo.mp4",
+  sceneTitle: "Authoring Draft Scene",
+  sceneDescription: "Generated from Authoring View",
+  trimStart: 0,
+  trimEnd: 0,
   currentTime: 0,
   duration: 0,
   lastPoint: { x: 50, y: 50 },
   isAddingHotspot: false,
   copyStatus: "",
+  explainSteps: [
+    {
+      id: "explain-default",
+      title: "기본 설명",
+      subtitle: "",
+      bullets: [],
+      keyMessage: "",
+      script: ""
+    }
+  ],
+  defaultStepId: "explain-default",
   hotspots: [],
   timeEvents: [],
   zoomEvents: []
@@ -26,8 +44,11 @@ export function renderAuthorView({ scenes, state }) {
           <h1>Scene JSON Builder</h1>
 
           <form class="author-video-control" data-author-load-form>
-            <label for="author-video-src">Video Path</label>
-            <div>
+            <label for="author-video-select">Video Source</label>
+            <div class="author-video-source">
+              <select id="author-video-select" data-author-video-select>
+                ${renderVideoOptions()}
+              </select>
               <input id="author-video-src" type="text" value="${escapeAttribute(authorState.videoSrc)}" data-author-video-src>
               <button type="submit">Load</button>
             </div>
@@ -36,7 +57,11 @@ export function renderAuthorView({ scenes, state }) {
           <div class="author-toolbar">
             <button type="button" data-author-action="play">Play</button>
             <button type="button" data-author-action="pause">Pause</button>
+            <button type="button" data-author-action="set-trim-start">Set Start</button>
+            <button type="button" data-author-action="set-trim-end">Set End</button>
+            <button type="button" data-author-action="seek-trim-start">Go Start</button>
             <span>Current Time: <strong data-author-current-time>${formatSeconds(authorState.currentTime)}</strong></span>
+            <span>Trim: <strong data-author-trim>${formatSeconds(authorState.trimStart)} - ${formatSeconds(getTrimEnd())}</strong></span>
             <span>Click X/Y: <strong data-author-point>${formatPercent(authorState.lastPoint.x)}, ${formatPercent(authorState.lastPoint.y)}</strong></span>
           </div>
 
@@ -58,12 +83,45 @@ export function renderAuthorView({ scenes, state }) {
 
         <aside class="author-panel">
           <section class="author-card">
+            <h2>Scene</h2>
+            <div class="author-grid">
+              <label>Title <input type="text" value="${escapeAttribute(authorState.sceneTitle)}" data-scene-title></label>
+              <label>Description <input type="text" value="${escapeAttribute(authorState.sceneDescription)}" data-scene-description></label>
+              <label>Trim Start <input type="number" min="0" step="0.01" value="${round(authorState.trimStart)}" data-trim-start></label>
+              <label>Trim End <input type="number" min="0" step="0.01" value="${round(getTrimEnd())}" data-trim-end></label>
+            </div>
+          </section>
+
+          <section class="author-card">
+            <h2>Explain Step</h2>
+            <div class="author-grid">
+              <label>Step ID <input type="text" value="explain-step" data-explain-id></label>
+              <label>Title <input type="text" value="설명 제목" data-explain-title></label>
+              <label>Subtitle <input type="text" value="" data-explain-subtitle></label>
+              <label>Key Message <input type="text" value="" data-explain-key-message></label>
+            </div>
+            <label class="author-wide-label">Bullets <textarea data-explain-bullets placeholder="한 줄에 하나씩 입력"></textarea></label>
+            <label class="author-wide-label">Script <textarea data-explain-script placeholder="발표자 스크립트"></textarea></label>
+            <div class="author-section-actions">
+              <button type="button" data-author-action="add-explain-step">Add / Update Step</button>
+              <button type="button" data-author-action="set-default-step">Set Default</button>
+            </div>
+            <div class="author-step-list" data-author-step-list>
+              ${renderExplainStepList()}
+            </div>
+          </section>
+
+          <section class="author-card">
             <h2>Hotspot</h2>
             <div class="author-grid">
               <label>Label <input type="text" value="제품 추천 카드" data-hotspot-label></label>
               <label>Width % <input type="number" min="1" max="100" step="0.1" value="18" data-hotspot-width></label>
               <label>Height % <input type="number" min="1" max="100" step="0.1" value="12" data-hotspot-height></label>
-              <label>Explain Step ID <input type="text" value="explain-product-card" data-hotspot-explain-step-id></label>
+              <label>Explain Step
+                <select data-hotspot-explain-step-id>
+                  ${renderExplainStepOptions()}
+                </select>
+              </label>
             </div>
             <button type="button" class="${authorState.isAddingHotspot ? "active-toggle" : ""}" data-author-action="arm-hotspot">
               ${authorState.isAddingHotspot ? "Click Video to Place" : "Add Hotspot"}
@@ -77,9 +135,14 @@ export function renderAuthorView({ scenes, state }) {
                 <select data-time-event-type>
                   <option value="syncExplain">syncExplain</option>
                   <option value="pause">pause</option>
+                  <option value="nextScene">nextScene</option>
                 </select>
               </label>
-              <label>Explain Step ID <input type="text" value="explain-input" data-time-event-explain-step-id></label>
+              <label>Explain Step
+                <select data-time-event-explain-step-id>
+                  ${renderExplainStepOptions()}
+                </select>
+              </label>
             </div>
             <button type="button" data-author-action="add-time-event">Add Time Event</button>
           </section>
@@ -92,12 +155,15 @@ export function renderAuthorView({ scenes, state }) {
               <label>Origin X % <input type="number" min="0" max="100" step="0.1" value="${round(authorState.lastPoint.x)}" data-zoom-x></label>
               <label>Origin Y % <input type="number" min="0" max="100" step="0.1" value="${round(authorState.lastPoint.y)}" data-zoom-y></label>
             </div>
-            <button type="button" data-author-action="add-zoom-event">Add Zoom Event</button>
+            <div class="author-section-actions">
+              <button type="button" data-author-action="add-zoom-event">Add Zoom Event</button>
+              <button type="button" data-author-action="add-zoom-reset">Add Reset Zoom</button>
+            </div>
           </section>
 
           <section class="author-card author-preview-card">
             <div class="author-preview-header">
-              <h2>Generated JSON Preview</h2>
+              <h2>Generated Scene Entry</h2>
               <button type="button" data-author-action="copy-json">Copy JSON</button>
             </div>
             <textarea readonly data-author-json-preview></textarea>
@@ -122,6 +188,7 @@ export function mountAuthorView() {
 
   if (!root || !video || !frame) return;
 
+  syncFormFromState();
   updatePreview();
   updateMarker();
 
@@ -130,10 +197,28 @@ export function mountAuthorView() {
     if (!form) return;
 
     event.preventDefault();
-    const input = form.querySelector("[data-author-video-src]");
-    authorState.videoSrc = input.value.trim() || "assets/videos/demo.mp4";
-    video.src = authorState.videoSrc;
-    video.load();
+    loadVideo(video);
+  }, { signal });
+
+  root.addEventListener("change", (event) => {
+    const videoSelect = event.target.closest("[data-author-video-select]");
+    if (videoSelect) {
+      const selected = normalizeVideo(videos[videoSelect.selectedIndex]);
+      if (selected.src) {
+        const input = document.querySelector("[data-author-video-src]");
+        if (input) input.value = selected.src;
+        authorState.videoSrc = selected.src;
+        loadVideo(video);
+      }
+    }
+
+    updateStateFromForm();
+    updatePreview();
+  }, { signal });
+
+  root.addEventListener("input", () => {
+    updateStateFromForm();
+    updateTrimReadout();
     updatePreview();
   }, { signal });
 
@@ -144,9 +229,15 @@ export function mountAuthorView() {
     const action = actionControl.dataset.authorAction;
     if (action === "play") video.play().catch(() => {});
     if (action === "pause") video.pause();
+    if (action === "set-trim-start") setTrimStart();
+    if (action === "set-trim-end") setTrimEnd();
+    if (action === "seek-trim-start") seekVideo(video, authorState.trimStart);
     if (action === "arm-hotspot") toggleHotspotPlacement();
+    if (action === "add-explain-step") addExplainStep();
+    if (action === "set-default-step") setDefaultExplainStep();
     if (action === "add-time-event") addTimeEvent();
-    if (action === "add-zoom-event") addZoomEvent();
+    if (action === "add-zoom-event") addZoomEvent(false);
+    if (action === "add-zoom-reset") addZoomEvent(true);
     if (action === "copy-json") copyJson();
   }, { signal });
 
@@ -174,13 +265,50 @@ export function mountAuthorView() {
   video.addEventListener("timeupdate", () => {
     authorState.currentTime = video.currentTime || 0;
     updateCurrentTime();
-    updatePreview();
   }, { signal });
 
   video.addEventListener("loadedmetadata", () => {
     authorState.duration = Number.isFinite(video.duration) ? video.duration : 0;
+    if (!authorState.trimEnd || authorState.trimEnd < authorState.trimStart) {
+      authorState.trimEnd = round(authorState.duration || authorState.currentTime || 0);
+    }
+    syncFormFromState();
+    updateTrimReadout();
     updatePreview();
   }, { signal });
+}
+
+function loadVideo(video) {
+  const input = document.querySelector("[data-author-video-src]");
+  authorState.videoSrc = input?.value.trim() || "assets/videos/demo.mp4";
+  video.src = authorState.videoSrc;
+  video.load();
+  updatePreview();
+}
+
+function setTrimStart() {
+  authorState.trimStart = round(authorState.currentTime);
+  if (authorState.trimEnd <= authorState.trimStart) {
+    authorState.trimEnd = round(authorState.duration || authorState.trimStart + 5);
+  }
+  syncFormFromState();
+  updatePreview();
+}
+
+function setTrimEnd() {
+  authorState.trimEnd = round(authorState.currentTime);
+  if (authorState.trimEnd <= authorState.trimStart) {
+    authorState.trimEnd = round(authorState.trimStart + 5);
+  }
+  syncFormFromState();
+  updatePreview();
+}
+
+function seekVideo(video, time) {
+  const safeTime = Math.max(0, Number(time || 0));
+  video.currentTime = safeTime;
+  authorState.currentTime = safeTime;
+  updateCurrentTime();
 }
 
 function toggleHotspotPlacement() {
@@ -195,15 +323,45 @@ function toggleHotspotPlacement() {
   }
 }
 
+function addExplainStep() {
+  const id = slugify(getInputValue("[data-explain-id]", "explain-step"));
+  const step = {
+    id,
+    title: getInputValue("[data-explain-title]", id),
+    subtitle: getInputValue("[data-explain-subtitle]", ""),
+    bullets: getTextareaLines("[data-explain-bullets]"),
+    keyMessage: getInputValue("[data-explain-key-message]", ""),
+    script: getTextareaValue("[data-explain-script]", "")
+  };
+  const existingIndex = authorState.explainSteps.findIndex((item) => item.id === id);
+
+  if (existingIndex >= 0) authorState.explainSteps[existingIndex] = step;
+  else authorState.explainSteps.push(step);
+
+  if (!authorState.defaultStepId) authorState.defaultStepId = id;
+  refreshExplainStepControls();
+  updatePreview();
+}
+
+function setDefaultExplainStep() {
+  const id = slugify(getInputValue("[data-explain-id]", authorState.defaultStepId));
+  if (authorState.explainSteps.some((step) => step.id === id)) {
+    authorState.defaultStepId = id;
+    refreshExplainStepControls();
+    updatePreview();
+  }
+}
+
 function addHotspot(point) {
   const label = getInputValue("[data-hotspot-label]", "Hotspot");
-  const explainStepId = getInputValue("[data-hotspot-explain-step-id]", "explain-step");
+  const explainStepId = getInputValue("[data-hotspot-explain-step-id]", authorState.defaultStepId);
+  const end = Math.min(getTrimEnd(), Math.max(authorState.currentTime + 5, authorState.currentTime));
   const hotspot = {
     id: `hotspot-${slugify(label)}-${authorState.hotspots.length + 1}`,
     type: "hotspot",
     timeRange: {
       start: round(authorState.currentTime),
-      end: round(authorState.duration || authorState.currentTime + 5)
+      end: round(end)
     },
     label,
     showLabel: true,
@@ -231,21 +389,21 @@ function addTimeEvent() {
   };
 
   if (type === "syncExplain") {
-    event.explainStepId = getInputValue("[data-time-event-explain-step-id]", "explain-step");
+    event.explainStepId = getInputValue("[data-time-event-explain-step-id]", authorState.defaultStepId);
   }
 
   authorState.timeEvents.push(event);
   updatePreview();
 }
 
-function addZoomEvent() {
+function addZoomEvent(isReset) {
   authorState.zoomEvents.push({
-    id: `zoom-event-${authorState.zoomEvents.length + 1}`,
+    id: `zoom-event-${isReset ? "reset" : "focus"}-${authorState.zoomEvents.length + 1}`,
     time: round(authorState.currentTime),
     duration: getNumberInput("[data-zoom-duration]", 0.5),
-    scale: getNumberInput("[data-zoom-scale]", 1.8),
-    x: clampPercent(getNumberInput("[data-zoom-x]", authorState.lastPoint.x)),
-    y: clampPercent(getNumberInput("[data-zoom-y]", authorState.lastPoint.y))
+    scale: isReset ? 1 : getNumberInput("[data-zoom-scale]", 1.8),
+    x: isReset ? 50 : clampPercent(getNumberInput("[data-zoom-x]", authorState.lastPoint.x)),
+    y: isReset ? 50 : clampPercent(getNumberInput("[data-zoom-y]", authorState.lastPoint.y))
   });
   updatePreview();
 }
@@ -268,21 +426,17 @@ async function copyJson() {
 }
 
 function getSceneJson() {
-  const explainStepIds = Array.from(new Set([
-    ...authorState.timeEvents.map((event) => event.explainStepId).filter(Boolean),
-    ...authorState.hotspots.map((hotspot) => hotspot.action?.explainStepId).filter(Boolean)
-  ]));
-  const defaultStepId = explainStepIds[0] || "explain-default";
+  updateStateFromForm();
 
   return {
-    id: "scene-author-draft",
-    title: "Authoring Draft Scene",
-    description: "Generated from Authoring View",
+    id: `scene-${slugify(authorState.sceneTitle)}`,
+    title: authorState.sceneTitle,
+    description: authorState.sceneDescription,
     demo: {
       videoSrc: authorState.videoSrc,
       trim: {
-        start: 0,
-        end: round(authorState.duration || authorState.currentTime || 0)
+        start: round(authorState.trimStart),
+        end: round(getTrimEnd())
       },
       playbackRate: 1,
       timeEvents: authorState.timeEvents,
@@ -290,17 +444,25 @@ function getSceneJson() {
       zoomEvents: authorState.zoomEvents
     },
     explain: {
-      defaultStepId,
-      steps: explainStepIds.map((id) => ({
-        id,
-        title: id,
-        subtitle: "",
-        bullets: [],
-        keyMessage: "",
-        script: ""
-      }))
+      defaultStepId: authorState.defaultStepId,
+      steps: authorState.explainSteps
     }
   };
+}
+
+function updateStateFromForm() {
+  authorState.sceneTitle = getInputValue("[data-scene-title]", authorState.sceneTitle);
+  authorState.sceneDescription = getInputValue("[data-scene-description]", authorState.sceneDescription);
+  authorState.trimStart = getNumberInput("[data-trim-start]", authorState.trimStart);
+  authorState.trimEnd = getNumberInput("[data-trim-end]", authorState.trimEnd);
+}
+
+function syncFormFromState() {
+  setInputValue("[data-scene-title]", authorState.sceneTitle);
+  setInputValue("[data-scene-description]", authorState.sceneDescription);
+  setInputValue("[data-trim-start]", round(authorState.trimStart));
+  setInputValue("[data-trim-end]", round(getTrimEnd()));
+  updateTrimReadout();
 }
 
 function updatePreview() {
@@ -311,6 +473,11 @@ function updatePreview() {
 function updateCurrentTime() {
   const readout = document.querySelector("[data-author-current-time]");
   if (readout) readout.textContent = formatSeconds(authorState.currentTime);
+}
+
+function updateTrimReadout() {
+  const readout = document.querySelector("[data-author-trim]");
+  if (readout) readout.textContent = `${formatSeconds(authorState.trimStart)} - ${formatSeconds(getTrimEnd())}`;
 }
 
 function updatePointReadout() {
@@ -333,9 +500,39 @@ function updateMarker() {
   marker.style.top = `${authorState.lastPoint.y}%`;
 }
 
+function refreshExplainStepControls() {
+  const list = document.querySelector("[data-author-step-list]");
+  const hotspotSelect = document.querySelector("[data-hotspot-explain-step-id]");
+  const eventSelect = document.querySelector("[data-time-event-explain-step-id]");
+  if (list) list.innerHTML = renderExplainStepList();
+  if (hotspotSelect) hotspotSelect.innerHTML = renderExplainStepOptions(hotspotSelect.value);
+  if (eventSelect) eventSelect.innerHTML = renderExplainStepOptions(eventSelect.value);
+}
+
 function renderHotspotLayer() {
   const layer = document.querySelector("[data-author-hotspot-layer]");
   if (layer) layer.innerHTML = renderAuthorHotspots();
+}
+
+function renderVideoOptions() {
+  return videos.map((video) => {
+    const item = normalizeVideo(video);
+    return `<option value="${escapeAttribute(item.src)}" ${item.src === authorState.videoSrc ? "selected" : ""}>${escapeHtml(item.label || item.src)}</option>`;
+  }).join("");
+}
+
+function renderExplainStepOptions(selectedId = authorState.defaultStepId) {
+  return authorState.explainSteps.map((step) => `
+    <option value="${escapeAttribute(step.id)}" ${step.id === selectedId ? "selected" : ""}>${escapeHtml(step.title || step.id)}</option>
+  `).join("");
+}
+
+function renderExplainStepList() {
+  return authorState.explainSteps.map((step) => `
+    <span class="${step.id === authorState.defaultStepId ? "is-default" : ""}">
+      ${escapeHtml(step.id === authorState.defaultStepId ? `${step.title} (default)` : step.title)}
+    </span>
+  `).join("");
 }
 
 function renderAuthorHotspots() {
@@ -356,8 +553,20 @@ function getClickPercent(event, element) {
   };
 }
 
+function getTrimEnd() {
+  return authorState.trimEnd || authorState.duration || authorState.currentTime || authorState.trimStart;
+}
+
 function getInputValue(selector, fallback) {
   return document.querySelector(selector)?.value.trim() || fallback;
+}
+
+function getTextareaValue(selector, fallback) {
+  return document.querySelector(selector)?.value.trim() || fallback;
+}
+
+function getTextareaLines(selector) {
+  return getTextareaValue(selector, "").split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
 function getNumberInput(selector, fallback) {
@@ -365,8 +574,22 @@ function getNumberInput(selector, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function setInputValue(selector, value) {
+  const input = document.querySelector(selector);
+  if (input) input.value = value;
+}
+
+function normalizeVideo(video) {
+  if (!video) return { src: "", label: "" };
+  if (typeof video === "string") return { src: video, label: video.split("/").pop() || video };
+  return {
+    src: video.src || "",
+    label: video.label || video.src || ""
+  };
+}
+
 function slugify(value) {
-  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "item";
+  return String(value).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "item";
 }
 
 function clampPercent(value) {

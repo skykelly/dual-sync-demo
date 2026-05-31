@@ -95,9 +95,15 @@ Automated/static checks completed:
   - `index.html?view=explain`
   - `index.html?view=author`
 - [x] Node render smoke check for Controller, Demo, Explain, and Author views
+- [x] `node scripts/build-single-html.mjs` generates `dist/index.html`
+- [x] Bundled `file://` smoke check renders:
+  - `dist/index.html?view=controller`
+  - `dist/index.html?view=demo`
+  - `dist/index.html?view=explain`
 
 Manual test status:
 
 - [ ] Full checklist execution still requires a browser session with `assets/videos/demo.mp4` present.
 - [ ] Dual-monitor fullscreen validation must be performed in the actual presentation environment.
 - [ ] Browser autoplay policy behavior must be verified in the presentation browser/profile.
+- [ ] BroadcastChannel sync should be manually checked across separate `dist/index.html` browser windows.

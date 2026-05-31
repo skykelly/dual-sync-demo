@@ -1,0 +1,2496 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dual Sync Presentation</title>
+  <style>
+:root {
+  --bg: #ffffff;
+  --ink: #171717;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --soft: #f6f7f9;
+  --red: #a50034;
+  --red-soft: #fff0f4;
+  --dark: #101114;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; font-family: Inter, Pretendard, Apple SD Gothic Neo, system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+body[data-view="demo"] { background: #0f1117; color: white; }
+body[data-view="explain"] { background: white; }
+body[data-view="controller"], body[data-view="author"] { background: #f3f4f6; }
+
+.screen { min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.9); backdrop-filter: blur(12px); color: var(--ink); }
+body[data-view="demo"] .topbar { background: rgba(15,17,23,.86); color: white; border-bottom-color: rgba(255,255,255,.14); }
+.topbar strong { margin-right: 12px; }
+.topbar span { color: var(--muted); margin-left: 10px; }
+body[data-view="demo"] .topbar span { color: #c4c7cf; }
+.status { display: flex; gap: 12px; align-items: center; }
+.status span { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; color: inherit; }
+body[data-view="demo"] .status span { border-color: rgba(255,255,255,.2); }
+.progress { height: 4px; background: rgba(165,0,52,.1); }
+.progress div { height: 100%; background: var(--red); transition: width .3s ease; }
+
+.hero { flex: 1; padding: 5vw 7vw; display: flex; flex-direction: column; justify-content: center; }
+.eyebrow { margin: 0 0 16px; color: var(--red); font-weight: 800; letter-spacing: 0; text-transform: uppercase; }
+h1 { margin: 0; font-size: clamp(42px, 5.5vw, 86px); line-height: 1.04; letter-spacing: 0; max-width: 1100px; }
+.subtitle, .lead { font-size: clamp(20px, 2vw, 31px); line-height: 1.45; color: var(--muted); max-width: 960px; margin: 24px 0 0; }
+body[data-view="demo"] .subtitle { color: #c7cbd4; }
+
+.demo-stage { flex: 1; display: grid; grid-template-rows: auto minmax(320px, 1fr) auto; gap: 24px; padding: 34px; }
+.demo-copy h1 { font-size: clamp(36px, 4vw, 64px); }
+.video-frame { position: relative; min-height: 360px; border: 1px solid rgba(255,255,255,.16); background: #181b24; overflow: hidden; display: grid; place-items: center; }
+.video-layer { position: absolute; inset: 0; transform: scale(1); transform-origin: 50% 50%; transition-property: transform; transition-timing-function: ease; transition-duration: .5s; }
+.demo-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #05060a; }
+.video-frame[data-video="missing"] .video-layer { opacity: 0; pointer-events: none; }
+.video-frame[data-video="ready"] .video-fallback { display: none; }
+.video-fallback { position: relative; z-index: 1; display: grid; gap: 12px; justify-items: center; padding: 28px; text-align: center; color: #e5e7eb; }
+.video-fallback strong { font-size: clamp(26px, 3vw, 44px); }
+.video-fallback span { color: #aeb4c1; font-size: 18px; }
+.hotspot-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.demo-hotspot { position: absolute; transform: translate(-50%, -50%); border: 0; background: transparent; padding: 0; border-radius: 4px; color: white; display: grid; place-items: start center; pointer-events: auto; min-width: 20px; min-height: 20px; }
+.demo-hotspot:focus-visible { outline: 3px solid rgba(255,255,255,.92); outline-offset: 3px; }
+.hotspot-label { transform: translateY(-100%); background: rgba(15,17,23,.78); border: 1px solid rgba(255,255,255,.18); padding: 6px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; pointer-events: none; }
+.debug-hotspots .demo-hotspot { border: 2px solid rgba(255,255,255,.86); background: rgba(165,0,52,.2); }
+.debug-hotspots .hotspot-label { background: rgba(165,0,52,.94); border-color: rgba(255,255,255,.44); }
+.timeline-summary { display: flex; gap: 10px; flex-wrap: wrap; color: #d5d8df; }
+.timeline-summary span { border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.07); padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+
+.chat-panel { width: min(900px, 100%); margin-top: 48px; display: grid; gap: 18px; }
+.bubble { padding: 22px 26px; border-radius: 28px; font-size: 24px; line-height: 1.45; box-shadow: 0 16px 55px rgba(0,0,0,.22); }
+.bubble.customer { background: #252936; justify-self: start; }
+.bubble.ai { background: var(--red); justify-self: end; max-width: 78%; }
+
+.demo-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 50px; }
+.demo-cards article { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 28px; padding: 28px; min-height: 230px; }
+.demo-cards b { font-size: 28px; }
+.demo-cards p { font-size: 22px; line-height: 1.4; color: #eef0f4; }
+.demo-cards small { color: #b6bbc7; font-size: 16px; }
+
+.graph-wrap { position: relative; height: 420px; margin-top: 46px; border-radius: 36px; background: radial-gradient(circle at center, rgba(165,0,52,.28), rgba(255,255,255,.04)); border: 1px solid rgba(255,255,255,.14); }
+.node { position: absolute; padding: 18px 22px; border-radius: 999px; background: #fff; color: #151515; font-weight: 800; box-shadow: 0 16px 50px rgba(0,0,0,.25); }
+.node-0 { left: 8%; top: 20%; } .node-1 { left: 10%; bottom: 16%; } .node-2 { right: 10%; top: 18%; } .node-3 { right: 8%; bottom: 18%; } .node-4 { left: 40%; top: 43%; background: var(--red); color: white; }
+.graph-line { position:absolute; inset: 18%; border: 2px dashed rgba(255,255,255,.28); border-radius: 999px; }
+
+.handoff-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 52px; }
+.handoff-flow div { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 26px; padding: 26px; font-size: 22px; min-height: 180px; }
+.handoff-flow span { display: grid; place-items: center; width: 42px; height: 42px; background: var(--red); color: white; border-radius: 50%; margin-bottom: 28px; font-weight: 800; }
+
+.summary-ring { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 54px; }
+.summary-ring span { padding: 22px 28px; border-radius: 999px; background: white; color: var(--ink); font-weight: 900; font-size: 24px; }
+
+.bullet-list { margin: 42px 0 0; padding: 0; list-style: none; display: grid; gap: 18px; max-width: 1050px; }
+.bullet-list li { font-size: clamp(22px, 2.2vw, 34px); line-height: 1.35; background: var(--soft); border: 1px solid var(--line); border-radius: 24px; padding: 22px 26px; }
+.bullet-list li::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--red); margin-right: 16px; vertical-align: middle; }
+.takeaway { margin-top: 42px; padding: 26px 30px; border-radius: 28px; background: var(--red-soft); color: var(--red); font-size: 28px; font-weight: 900; max-width: 1050px; }
+.explain-hero { position: relative; overflow: hidden; }
+.explain-content { animation: explainFade .24s ease both; }
+.speaker-script { margin-top: 28px; max-width: 1050px; border-top: 1px solid var(--line); padding-top: 20px; color: #30333a; }
+.speaker-script h2 { margin: 0 0 8px; color: var(--red); font-size: 16px; text-transform: uppercase; letter-spacing: 0; }
+.speaker-script p { margin: 0; font-size: 20px; line-height: 1.55; color: #30333a; }
+.explain-debug { position: absolute; right: 28px; bottom: 24px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: min(720px, calc(100% - 56px)); color: #4b5563; }
+.explain-debug span { border: 1px solid var(--line); background: rgba(255,255,255,.9); padding: 7px 9px; border-radius: 6px; font-size: 12px; }
+@keyframes explainFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.controller-layout { flex: 1; display: grid; grid-template-columns: minmax(0, 1.28fr) minmax(380px, .72fr); gap: 24px; padding: 28px; }
+.controller-main, .speaker-note { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 28px; box-shadow: 0 12px 40px rgba(15,17,23,.08); }
+.controller-current { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 22px; align-items: start; }
+.controller-main h1 { font-size: clamp(38px, 4vw, 58px); }
+.console-label { display: inline-block; margin-bottom: 8px; color: var(--red); font-size: 13px; font-weight: 900; text-transform: uppercase; }
+.console-state { min-width: 140px; display: grid; gap: 8px; justify-items: center; border: 1px solid var(--line); background: var(--soft); border-radius: 8px; padding: 16px; }
+.console-state strong { font-size: 28px; line-height: 1; }
+.console-state span { color: var(--muted); font-weight: 800; }
+.console-state.is-playing { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.console-state.is-playing span { color: var(--red); }
+.controller-description { max-width: 760px; color: var(--muted); font-size: 20px; line-height: 1.45; margin: 16px 0 0; }
+.controls { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+.transport-controls button { min-height: 58px; min-width: 124px; font-size: 18px; }
+button, .open-links a { appearance: none; border: 1px solid var(--line); background: white; border-radius: 8px; padding: 14px 18px; font-weight: 800; cursor: pointer; text-decoration: none; color: var(--ink); font-size: 16px; }
+button.primary { background: var(--red); color: white; border-color: var(--red); }
+button.active-toggle { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.video-status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 22px; color: #30333a; }
+.video-status span { border: 1px solid var(--line); background: var(--soft); padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 800; line-height: 1.35; }
+.jump-time-control { margin-top: 20px; display: grid; gap: 10px; }
+.jump-time-control label { color: var(--red); font-size: 16px; font-weight: 900; }
+.jump-time-control div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.jump-time-control input { width: 100%; min-height: 52px; border: 1px solid var(--line); border-radius: 8px; padding: 0 14px; font: inherit; font-weight: 800; }
+.console-panel { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 22px; }
+.speed-control h2, .explain-control h2 { margin: 0 0 12px; font-size: 18px; color: var(--red); }
+.speed-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.speed-button { border-radius: 8px; padding: 12px 16px; font-size: 15px; min-width: 74px; }
+.speed-button.active { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.explain-step-buttons { display: grid; gap: 10px; }
+.explain-step-button { text-align: left; border-radius: 8px; padding: 14px; font-size: 16px; line-height: 1.35; }
+.explain-step-button.active { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.jump-grid { display: grid; gap: 10px; margin: 0 0 28px; }
+.jump { text-align: left; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
+.jump span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--soft); color: var(--muted); }
+.jump strong { overflow-wrap: anywhere; }
+.jump.active { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.jump.active span { background: var(--red); color: white; }
+.speaker-note h2 { margin: 0 0 12px; font-size: 18px; color: var(--red); }
+.speaker-note p { font-size: 20px; line-height: 1.65; color: #30333a; margin-bottom: 28px; }
+.open-links { display: grid; gap: 12px; margin-top: 24px; }
+.open-links a { text-align: center; background: #111827; color: white; }
+
+.author-layout { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(390px, .48fr); gap: 24px; padding: 28px; }
+.author-workspace, .author-panel { min-width: 0; }
+.author-workspace { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 28px; box-shadow: 0 12px 40px rgba(15,17,23,.08); }
+.author-workspace h1 { font-size: clamp(36px, 4vw, 58px); }
+.author-video-control { display: grid; gap: 10px; margin-top: 24px; }
+.author-video-control label, .author-grid label { color: #30333a; font-size: 14px; font-weight: 900; }
+.author-video-control div { display: grid; grid-template-columns: minmax(180px, .42fr) minmax(0, 1fr) auto; gap: 10px; }
+.author-video-control input, .author-video-control select, .author-grid input, .author-grid select, .author-wide-label textarea { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; font: inherit; color: var(--ink); background: white; }
+.author-wide-label { display: grid; gap: 6px; margin-bottom: 12px; color: #30333a; font-size: 14px; font-weight: 900; }
+.author-wide-label textarea { min-height: 86px; resize: vertical; padding: 12px; line-height: 1.45; }
+.author-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.author-toolbar span { min-height: 48px; display: inline-flex; align-items: center; border: 1px solid var(--line); background: var(--soft); border-radius: 8px; padding: 0 14px; color: #30333a; font-weight: 800; }
+.author-video-frame { position: relative; margin-top: 20px; aspect-ratio: 16 / 9; min-height: 320px; overflow: hidden; border: 1px solid #cfd4dc; border-radius: 8px; background: #080a0f; cursor: crosshair; }
+.author-video-frame.is-armed { border-color: var(--red); box-shadow: 0 0 0 4px rgba(165,0,52,.12); }
+.author-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #05060a; }
+.author-hotspot-layer { position: absolute; inset: 0; pointer-events: none; }
+.author-hotspot { position: absolute; transform: translate(-50%, -50%); display: grid; place-items: center; border: 2px solid rgba(255,255,255,.9); border-radius: 4px; background: rgba(165,0,52,.28); color: white; font-size: 12px; font-weight: 900; text-align: center; padding: 4px; overflow: hidden; overflow-wrap: anywhere; }
+.author-click-marker { position: absolute; z-index: 3; width: 18px; height: 18px; border: 2px solid white; border-radius: 50%; background: var(--red); transform: translate(-50%, -50%); box-shadow: 0 0 0 4px rgba(165,0,52,.3); pointer-events: none; }
+.author-panel { display: grid; gap: 16px; align-content: start; }
+.author-card { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 18px; box-shadow: 0 12px 40px rgba(15,17,23,.08); }
+.author-card h2 { margin: 0 0 14px; font-size: 18px; color: var(--red); }
+.author-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.author-grid label { display: grid; gap: 6px; }
+.author-section-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.author-step-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.author-step-list span { border: 1px solid var(--line); background: var(--soft); border-radius: 999px; padding: 7px 10px; color: #30333a; font-size: 12px; font-weight: 900; }
+.author-step-list span.is-default { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.author-preview-card { min-height: 360px; display: grid; grid-template-rows: auto minmax(260px, 1fr) auto; }
+.author-preview-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.author-preview-header h2 { margin: 0; }
+.author-preview-card textarea { width: 100%; min-height: 260px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; padding: 14px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #111827; background: #f9fafb; }
+.author-copy-status { min-height: 20px; margin: 8px 0 0; color: var(--red); font-weight: 800; }
+
+@media (max-width: 900px) {
+  .controller-layout, .author-layout, .demo-cards, .handoff-flow { grid-template-columns: 1fr; }
+  .topbar { height: auto; align-items: flex-start; gap: 10px; flex-direction: column; padding: 16px; }
+  .hero { padding: 40px 24px; }
+  .author-grid { grid-template-columns: 1fr; }
+  .author-video-control div { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+"use strict";
+(function() {
+const __factories = Object.create(null);
+const __modules = Object.create(null);
+function __require(moduleId) {
+  if (!__modules[moduleId]) {
+    const factory = __factories[moduleId];
+    if (!factory) throw new Error("Missing bundled module: " + moduleId);
+    const exports = {};
+    __modules[moduleId] = exports;
+    factory(exports);
+  }
+  return __modules[moduleId];
+}
+
+__factories["src/app.js"] = function(exports) {
+const { scenes } = __require("data/scenes.js");
+const { mountAuthorView, renderAuthorView } = __require("src/authorView.js");
+const { renderControllerView } = __require("src/controllerView.js");
+const { renderDemoView } = __require("src/demoView.js");
+const { renderExplainView } = __require("src/explainView.js");
+const { createPresentationState } = __require("src/state.js");
+const { createSyncChannel } = __require("src/sync.js");
+const { mountVideoTimeline,
+  restartActiveVideo,
+  resetActiveVideoZoom,
+  resetVideoForScene,
+  seekActiveVideo,
+  setActiveVideoPlaybackRate,
+  setActiveVideoPlaying } = __require("src/videoEngine.js");
+const { formatTime } = __require("src/viewShell.js");
+
+const params = new URLSearchParams(window.location.search);
+const view = params.get("view") || "controller";
+const app = document.getElementById("app");
+const presentation = createPresentationState(scenes);
+const { state } = presentation;
+const sync = createSyncChannel(handleSyncMessage);
+
+function handleSyncMessage(data) {
+  if (data.type === "SET_STEP" || data.type === "GO_TO_SCENE") {
+    presentation.setStep(data.step ?? data.sceneIndex);
+    resetVideoForScene();
+    render();
+  }
+
+  if (data.type === "PLAY") {
+    presentation.setPlaying(true);
+    if (view === "demo") {
+      setActiveVideoPlaying(true);
+      renderPlaybackStatusOnly();
+    } else {
+      render();
+    }
+  }
+
+  if (data.type === "PAUSE") {
+    if (view === "controller") {
+      pauseTimer(false);
+    } else {
+      presentation.setPlaying(false);
+      if (view === "demo") {
+        setActiveVideoPlaying(false);
+        renderPlaybackStatusOnly();
+      } else {
+        render();
+      }
+    }
+  }
+
+  if (data.type === "RESET_TIMER") {
+    presentation.resetRemainingSec();
+    render();
+  }
+
+  if (data.type === "RESTART_SCENE") {
+    presentation.setStep(data.sceneIndex ?? state.currentStep);
+    presentation.setPlaying(false);
+    presentation.clearTimer();
+    if (view === "demo") {
+      restartActiveVideo();
+      renderPlaybackStatusOnly();
+    } else {
+      render();
+    }
+  }
+
+  if (data.type === "SYNC_EXPLAIN") {
+    if (Number.isFinite(data.sceneIndex) && data.sceneIndex !== state.currentStep) {
+      presentation.setStep(data.sceneIndex);
+    }
+    presentation.setExplainStep(data.explainStepId);
+    render();
+  }
+
+  if (data.type === "VIDEO_TIME_UPDATE" && view === "controller") {
+    presentation.setVideoStatus(data);
+    renderControllerVideoStatusOnly();
+  }
+
+  if (data.type === "JUMP_TO_TIME" && view === "demo") {
+    seekActiveVideo(data.time);
+  }
+
+  if (data.type === "RESET_ZOOM" && view === "demo") {
+    resetActiveVideoZoom();
+  }
+
+  if (data.type === "SET_PLAYBACK_RATE") {
+    presentation.setPlaybackRate(data.playbackRate);
+    if (view === "demo") {
+      setActiveVideoPlaybackRate(state.playbackRate);
+    } else {
+      render();
+    }
+  }
+
+  if (data.type === "SET_DEBUG_HOTSPOTS") {
+    presentation.setDebugHotspots(data.debugHotspots);
+    if (view === "demo") {
+      updateDemoHotspotDebugOnly();
+    } else {
+      render();
+    }
+  }
+
+  if (data.type === "SET_HOTSPOT_DEBUG") {
+    presentation.setDebugHotspots(data.enabled);
+    if (view === "demo") {
+      updateDemoHotspotDebugOnly();
+    } else {
+      render();
+    }
+  }
+}
+
+function setStep(step, shouldBroadcast = true) {
+  presentation.setStep(step);
+  resetVideoForScene();
+  render();
+
+  if (shouldBroadcast) {
+    sync.broadcast("SET_STEP", { step: state.currentStep });
+  }
+}
+
+function nextStep() {
+  setStep(state.currentStep + 1);
+}
+
+function prevStep() {
+  setStep(state.currentStep - 1);
+}
+
+function startTimer() {
+  presentation.setPlaying(true);
+  presentation.clearTimer();
+  presentation.setTimer(setInterval(() => {
+    presentation.setRemainingSec(state.remainingSec - 1);
+
+    if (state.remainingSec <= 0) {
+      presentation.clearTimer();
+      presentation.setPlaying(false);
+
+      if (state.currentStep < scenes.length - 1) {
+        nextStep();
+      } else {
+        render();
+      }
+    } else {
+      renderTimerOnly();
+    }
+  }, 1000));
+
+  sync.broadcast("PLAY", { step: state.currentStep });
+  render();
+}
+
+function pauseTimer(shouldBroadcast = true) {
+  presentation.setPlaying(false);
+  presentation.clearTimer();
+
+  if (shouldBroadcast) {
+    sync.broadcast("PAUSE", { step: state.currentStep, remainingSec: state.remainingSec });
+  }
+
+  render();
+}
+
+function resetTimer() {
+  pauseTimer(false);
+  presentation.resetRemainingSec();
+  sync.broadcast("RESET_TIMER", { step: state.currentStep });
+  render();
+}
+
+function restartScene() {
+  presentation.setPlaying(false);
+  presentation.clearTimer();
+  presentation.setStep(state.currentStep);
+  sync.broadcast("RESTART_SCENE", { sceneIndex: state.currentStep });
+  render();
+}
+
+function resetZoom() {
+  sync.broadcast("RESET_ZOOM", { sceneIndex: state.currentStep });
+}
+
+function setPlaybackRate(playbackRate) {
+  presentation.setPlaybackRate(playbackRate);
+  sync.broadcast("SET_PLAYBACK_RATE", {
+    sceneIndex: state.currentStep,
+    playbackRate: state.playbackRate
+  });
+  render();
+}
+
+function jumpToSceneTime(sceneTime) {
+  const scene = scenes[state.currentStep];
+  const trimStart = scene?.demo?.trim?.start || 0;
+  const trimEnd = scene?.demo?.trim?.end || trimStart;
+  const numericSceneTime = Number(sceneTime);
+  if (!Number.isFinite(numericSceneTime)) return;
+
+  const targetTime = Math.max(trimStart, Math.min(trimEnd, trimStart + Math.max(0, numericSceneTime)));
+  sync.broadcast("JUMP_TO_TIME", {
+    sceneIndex: state.currentStep,
+    time: targetTime
+  });
+  presentation.setVideoStatus({
+    sceneIndex: state.currentStep,
+    currentTime: targetTime,
+    isPlaying: state.isPlaying
+  });
+  renderControllerVideoStatusOnly();
+}
+
+function formatVideoClock(seconds, fallback = 0) {
+  const numericSeconds = Number.isFinite(Number(seconds)) ? Number(seconds) : fallback;
+  const safeSeconds = Math.max(0, numericSeconds);
+  const minutes = Math.floor(safeSeconds / 60).toString().padStart(2, "0");
+  const remainingSeconds = (safeSeconds % 60).toFixed(2).padStart(5, "0");
+  return `${minutes}:${remainingSeconds}`;
+}
+
+function renderTimerOnly() {
+  const timer = document.querySelector("[data-timer]");
+  if (timer) timer.textContent = formatTime(state.remainingSec);
+}
+
+function renderControllerVideoStatusOnly() {
+  const videoStatus = document.querySelector(".video-status");
+  if (!videoStatus || view !== "controller") return;
+
+  const scene = scenes[state.currentStep];
+  const trim = scene.demo?.trim || { start: 0, end: 0 };
+  const currentTime = state.videoStatus?.currentTime ?? trim.start;
+  const sceneElapsed = Math.max(0, Number(currentTime || trim.start) - Number(trim.start || 0));
+  const sceneDuration = Math.max(0, Number(trim.end || 0) - Number(trim.start || 0));
+  const currentExplainStep = getExplainStep(scene, state.currentExplainStepId);
+
+  videoStatus.innerHTML = `
+    <span>현재 영상 시간 ${formatVideoClock(currentTime, trim.start)} / ${formatVideoClock(trim.end, 0)}</span>
+    <span>Scene Time ${formatVideoClock(sceneElapsed, 0)} / ${formatVideoClock(sceneDuration, 0)}</span>
+    <span>현재 Explain ${currentExplainStep.title || "none"}</span>
+  `;
+}
+
+function renderPlaybackStatusOnly() {
+  const status = document.querySelector(".status span:last-child");
+  if (status) status.textContent = state.isPlaying ? "PLAY" : "PAUSE";
+}
+
+function updateDemoHotspotDebugOnly() {
+  const frame = document.querySelector(".video-frame");
+  if (!frame || view !== "demo") return;
+
+  frame.classList.toggle("debug-hotspots", state.debugHotspots);
+  frame.dataset.debugHotspots = state.debugHotspots ? "true" : "false";
+}
+
+function syncExplain(explainStepId, shouldBroadcast = true) {
+  presentation.setExplainStep(explainStepId);
+  if (view !== "demo") {
+    render();
+  }
+
+  if (shouldBroadcast) {
+    sync.broadcast("SYNC_EXPLAIN", {
+      sceneIndex: state.currentStep,
+      explainStepId
+    });
+  }
+}
+
+function handleVideoPause() {
+  presentation.setPlaying(false);
+  presentation.clearTimer();
+  sync.broadcast("PAUSE", { step: state.currentStep, remainingSec: state.remainingSec });
+  renderPlaybackStatusOnly();
+}
+
+function handleVideoPlaybackStateChange(isPlaying) {
+  presentation.setPlaying(isPlaying);
+  renderPlaybackStatusOnly();
+}
+
+function render() {
+  const scene = scenes[state.currentStep];
+  document.body.dataset.view = view;
+
+  if (view === "demo") {
+    app.innerHTML = renderDemoView({ scene, scenes, state });
+    mountVideoTimeline({
+      scene,
+      sceneIndex: state.currentStep,
+      isPlaying: state.isPlaying,
+      broadcast: sync.broadcast,
+      onPause: handleVideoPause,
+      onNextScene: nextStep,
+      onSyncExplain: syncExplain,
+      onPlaybackStateChange: handleVideoPlaybackStateChange,
+      playbackRate: state.playbackRate
+    });
+  } else if (view === "author") {
+    resetVideoForScene();
+    app.innerHTML = renderAuthorView({ scenes, state });
+    mountAuthorView();
+  } else if (view === "explain") {
+    app.innerHTML = renderExplainView({ scene, scenes, state });
+  } else {
+    app.innerHTML = renderControllerView({ scene, scenes, state });
+  }
+}
+
+app.addEventListener("click", (event) => {
+  const control = event.target.closest("[data-action]");
+  if (!control) return;
+
+  const action = control.dataset.action;
+
+  if (action === "prev") prevStep();
+  if (action === "next") nextStep();
+  if (action === "play-toggle") state.isPlaying ? pauseTimer() : startTimer();
+  if (action === "reset") resetTimer();
+  if (action === "restart-scene") restartScene();
+  if (action === "reset-zoom") resetZoom();
+  if (action === "set-step") setStep(Number(control.dataset.step));
+  if (action === "sync-explain") syncExplain(control.dataset.explainStepId);
+  if (action === "set-playback-rate") setPlaybackRate(Number(control.dataset.playbackRate));
+  if (action === "toggle-debug-hotspots") {
+    presentation.setDebugHotspots(!state.debugHotspots);
+    sync.broadcast("SET_HOTSPOT_DEBUG", { enabled: state.debugHotspots });
+    render();
+  }
+});
+
+app.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-jump-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  jumpToSceneTime(form.querySelector("[data-jump-time]")?.value);
+});
+
+window.addEventListener("keydown", (event) => {
+  if (view === "author") return;
+
+  if (["ArrowRight", "Space", "PageDown"].includes(event.code)) nextStep();
+  if (["ArrowLeft", "PageUp"].includes(event.code)) prevStep();
+  if (event.code === "KeyP") state.isPlaying ? pauseTimer() : startTimer();
+  if (event.code === "KeyR") resetTimer();
+});
+
+render();
+
+function formatPlaybackRate(rate) {
+  return Number(rate || 1).toFixed(2).replace(/\.?0+$/, "");
+}
+
+function getExplainStep(scene, explainStepId) {
+  const steps = scene.explain?.steps || [];
+  return steps.find((step) => step.id === explainStepId)
+    || steps.find((step) => step.id === scene.explain?.defaultStepId)
+    || steps[0]
+    || {};
+}
+
+
+};
+
+__factories["data/scenes.js"] = function(exports) {
+const scenes = [
+  {
+    id: "scene-01",
+    title: "상황 기반 질문",
+    description: "고객이 제품명이 아니라 생활 상황으로 AI Shopping Agent에게 질문하는 장면",
+    demo: {
+      videoSrc: "assets/videos/demo.mp4",
+      trim: {
+        start: 0,
+        end: 14
+      },
+      playbackRate: 1,
+      timeEvents: [
+        {
+          id: "scene-01-context-question",
+          time: 3,
+          type: "syncExplain",
+          explainStepId: "scene-01-context"
+        },
+        {
+          id: "scene-01-ux-shift",
+          time: 9,
+          type: "syncExplain",
+          explainStepId: "scene-01-shift"
+        }
+      ],
+      interactions: [],
+      zoomEvents: []
+    },
+    explain: {
+      defaultStepId: "scene-01-default",
+      steps: [
+        {
+          id: "scene-01-default",
+          title: "고객은 제품명이 아니라 상황으로 질문한다",
+          subtitle: "AI Shopping Agent 데모의 출발점",
+          bullets: [
+            "검색어보다 고객의 생활 상황이 먼저 등장",
+            "고객은 제품 스펙을 몰라도 자신의 문제를 설명할 수 있음",
+            "대화형 접점은 구매 여정 초입에서 더 많은 맥락을 확보"
+          ],
+          keyMessage: "검색 중심 UX에서 대화 중심 UX로 전환된다.",
+          script: "첫 장면은 고객이 제품명을 찾는 대신 자신의 상황을 설명하면서 쇼핑 여정을 시작한다는 점을 보여줍니다."
+        },
+        {
+          id: "scene-01-context",
+          title: "상황 질문은 고객 데이터를 만든다",
+          subtitle: "질문 자체가 추천과 상담의 입력값",
+          bullets: [
+            "사용 공간, 가족 구성, 예산, 설치 제약이 자연어 안에 포함",
+            "AI는 고객의 표현을 구매 판단에 필요한 단서로 전환",
+            "초기 질문 품질이 이후 추천 품질을 좌우"
+          ],
+          keyMessage: "질문 자체가 고객 데이터가 된다.",
+          script: "고객의 자연어 질문은 단순 텍스트가 아니라 추천과 상담에 필요한 고객 데이터의 시작점입니다."
+        },
+        {
+          id: "scene-01-shift",
+          title: "대화형 UX는 탐색 비용을 낮춘다",
+          subtitle: "카테고리 탐색 이전에 의도를 먼저 파악",
+          bullets: [
+            "고객이 카테고리 구조를 학습하지 않아도 됨",
+            "AI가 애매한 니즈를 상품 판단 기준으로 정리",
+            "초기 대화가 다음 화면과 상담 흐름을 개인화"
+          ],
+          keyMessage: "AI Shopping Agent는 검색창이 아니라 구매 여정의 안내자다.",
+          script: "핵심은 검색창을 더 똑똑하게 만드는 것이 아니라 고객의 구매 여정 자체를 대화 중심으로 바꾸는 것입니다."
+        }
+      ]
+    }
+  },
+  {
+    id: "scene-02",
+    title: "AI 질문 이해",
+    description: "AI가 자연어 질문에서 고객 맥락과 제약 조건을 추출하는 장면",
+    demo: {
+      videoSrc: "assets/videos/demo.mp4",
+      trim: {
+        start: 14,
+        end: 31
+      },
+      playbackRate: 1,
+      timeEvents: [
+        {
+          id: "scene-02-extract-context",
+          time: 18,
+          type: "syncExplain",
+          explainStepId: "scene-02-extraction"
+        },
+        {
+          id: "scene-02-qualify-intent",
+          time: 25,
+          type: "syncExplain",
+          explainStepId: "scene-02-qualification"
+        }
+      ],
+      interactions: [
+        {
+          id: "hotspot-scene-02-context-panel",
+          type: "hotspot",
+          timeRange: {
+            start: 17,
+            end: 27
+          },
+          label: "고객 맥락 추출",
+          showLabel: true,
+          x: 18,
+          y: 28,
+          width: 31,
+          height: 36,
+          action: {
+            type: "syncExplain",
+            explainStepId: "scene-02-extraction"
+          }
+        },
+        {
+          id: "hotspot-scene-02-constraints",
+          type: "hotspot",
+          timeRange: {
+            start: 22,
+            end: 30
+          },
+          label: "설치/예산 조건",
+          showLabel: true,
+          x: 54,
+          y: 36,
+          width: 27,
+          height: 24,
+          action: {
+            type: "syncExplain",
+            explainStepId: "scene-02-qualification"
+          }
+        }
+      ],
+      zoomEvents: []
+    },
+    explain: {
+      defaultStepId: "scene-02-default",
+      steps: [
+        {
+          id: "scene-02-default",
+          title: "AI는 질문을 고객 맥락으로 구조화한다",
+          subtitle: "자연어 이해가 추천 엔진의 첫 단계",
+          bullets: [
+            "문장 속에서 공간, 예산, 가족 구성, 사용 목적을 분리",
+            "추가 질문이 필요한 정보와 충분한 정보를 구분",
+            "고객이 말한 맥락을 이후 화면에서 계속 유지"
+          ],
+          keyMessage: "AI는 고객 말을 제품 판단 기준으로 번역한다.",
+          script: "두 번째 장면은 AI가 자연어를 그대로 답변하지 않고 추천 가능한 구조로 바꾸는 과정을 설명합니다."
+        },
+        {
+          id: "scene-02-extraction",
+          title: "고객 맥락 추출이 구매 여정을 개인화한다",
+          subtitle: "질문 안의 상황 정보가 다음 행동을 결정",
+          bullets: [
+            "공간: 거실, 주방, 세탁실 같은 설치 환경",
+            "사용자: 1인 가구, 신혼, 아이 있는 가족, 반려동물 가정",
+            "목적: 교체, 첫 구매, 업그레이드, 선물"
+          ],
+          keyMessage: "질문 자체가 고객 데이터가 된다.",
+          script: "핫스팟으로 표시된 맥락 패널은 고객 질문이 어떻게 구조화되는지 보여주는 핵심 영역입니다."
+        },
+        {
+          id: "scene-02-qualification",
+          title: "제약 조건은 추천 실패를 줄인다",
+          subtitle: "좋은 추천은 먼저 불가능한 선택지를 제거",
+          bullets: [
+            "설치 가능성, 예산 범위, 배송 일정 같은 탈락 조건 확인",
+            "고객에게 맞지 않는 제품을 추천하는 위험 감소",
+            "Sales AI Team이 상담 전에 확인해야 할 항목을 자동 정리"
+          ],
+          keyMessage: "조건을 먼저 이해해야 추천이 신뢰를 얻는다.",
+          script: "AI가 조건을 명확히 잡아야 이후 Sales AI Team이 같은 고객 맥락을 기준으로 상담을 이어갈 수 있습니다."
+        }
+      ]
+    }
+  },
+  {
+    id: "scene-03",
+    title: "Knowledge Atlas 추천",
+    description: "AI가 Knowledge Atlas를 기반으로 추천 카드와 추천 근거를 제시하는 장면",
+    demo: {
+      videoSrc: "assets/videos/demo.mp4",
+      trim: {
+        start: 31,
+        end: 50
+      },
+      playbackRate: 1,
+      timeEvents: [
+        {
+          id: "scene-03-atlas-match",
+          time: 35,
+          type: "syncExplain",
+          explainStepId: "scene-03-atlas"
+        },
+        {
+          id: "scene-03-recommend-card",
+          time: 41,
+          type: "syncExplain",
+          explainStepId: "scene-03-recommendation"
+        }
+      ],
+      interactions: [
+        {
+          id: "hotspot-scene-03-atlas",
+          type: "hotspot",
+          timeRange: {
+            start: 34,
+            end: 43
+          },
+          label: "Knowledge Atlas",
+          showLabel: true,
+          x: 12,
+          y: 24,
+          width: 30,
+          height: 34,
+          action: {
+            type: "syncExplain",
+            explainStepId: "scene-03-atlas"
+          }
+        },
+        {
+          id: "hotspot-scene-03-card",
+          type: "hotspot",
+          timeRange: {
+            start: 40,
+            end: 49
+          },
+          label: "추천 카드",
+          showLabel: true,
+          x: 55,
+          y: 20,
+          width: 31,
+          height: 45,
+          action: {
+            type: "syncExplain",
+            explainStepId: "scene-03-recommendation"
+          }
+        }
+      ],
+      zoomEvents: [
+        {
+          id: "zoom-scene-03-card",
+          time: 41,
+          duration: 0.5,
+          scale: 1.55,
+          x: 70,
+          y: 42,
+          explainStepId: "scene-03-recommendation"
+        },
+        {
+          id: "zoom-scene-03-reset",
+          time: 48,
+          duration: 0.4,
+          scale: 1,
+          x: 50,
+          y: 50
+        }
+      ]
+    },
+    explain: {
+      defaultStepId: "scene-03-default",
+      steps: [
+        {
+          id: "scene-03-default",
+          title: "추천의 차별화는 상품이 아니라 근거다",
+          subtitle: "고객 맥락과 제품 지식을 연결한 설명 가능한 추천",
+          bullets: [
+            "같은 상품도 고객 맥락에 따라 추천 이유가 달라짐",
+            "추천 카드에는 제품명보다 선택 근거가 먼저 보여야 함",
+            "설명 가능한 근거가 상담 전환의 신뢰를 만듦"
+          ],
+          keyMessage: "추천의 차별화는 상품이 아니라 근거다.",
+          script: "세 번째 장면은 AI가 단순히 상품을 나열하는 것이 아니라 왜 이 상품인지 설명하는 부분입니다."
+        },
+        {
+          id: "scene-03-atlas",
+          title: "Knowledge Atlas가 추천 판단의 기준이 된다",
+          subtitle: "제품, 고객, 비즈니스 지식을 하나의 판단 체계로 연결",
+          bullets: [
+            "제품 지식: 스펙, 설치 조건, 라인업, 리뷰, 비교 기준",
+            "고객 지식: 선호, 여정, 상담 이력, 구매 맥락",
+            "비즈니스 지식: 프로모션, 재고, 정책, 채널 운영 규칙"
+          ],
+          keyMessage: "LLM보다 중요한 것은 LLM이 참조하는 지식 구조다.",
+          script: "Knowledge Atlas는 Sales AI Team이 같은 기준으로 고객을 이해하고 추천을 설명하게 만드는 공통 지식 기반입니다."
+        },
+        {
+          id: "scene-03-recommendation",
+          title: "추천 카드는 결정 부담을 낮추는 인터페이스다",
+          subtitle: "추천 제품과 추천 이유가 같은 화면에서 제시",
+          bullets: [
+            "고객 조건과 일치하는 근거를 카드 안에서 확인",
+            "대안 제품과 비교할 때도 같은 판단 기준을 사용",
+            "확대되는 카드 영역은 발표자가 근거 설명에 집중하도록 설계"
+          ],
+          keyMessage: "추천 UI는 목록이 아니라 의사결정 보조 도구다.",
+          script: "이 구간의 Zoom Event는 추천 카드 영역을 확대해 제품보다 추천 근거가 중요하다는 메시지를 강조합니다."
+        }
+      ]
+    }
+  },
+  {
+    id: "scene-04",
+    title: "상담 전환",
+    description: "온라인 AI 상담이 예약, 매장 연결, 설치 실행으로 이어지는 장면",
+    demo: {
+      videoSrc: "assets/videos/demo.mp4",
+      trim: {
+        start: 50,
+        end: 66
+      },
+      playbackRate: 1,
+      timeEvents: [
+        {
+          id: "scene-04-cta",
+          time: 54,
+          type: "syncExplain",
+          explainStepId: "scene-04-cta"
+        },
+        {
+          id: "scene-04-handoff",
+          time: 61,
+          type: "syncExplain",
+          explainStepId: "scene-04-handoff"
+        }
+      ],
+      interactions: [],
+      zoomEvents: []
+    },
+    explain: {
+      defaultStepId: "scene-04-default",
+      steps: [
+        {
+          id: "scene-04-default",
+          title: "AI 상담은 오프라인 실행으로 연결되어야 한다",
+          subtitle: "온라인 대화에서 실제 구매 행동으로 전환",
+          bullets: [
+            "추천 이후 다음 행동이 명확해야 전환율이 높아짐",
+            "상담 예약, 매장 방문, 설치 가능 확인을 한 흐름으로 연결",
+            "AI가 고객 접점과 현장 실행 사이의 단절을 줄임"
+          ],
+          keyMessage: "AI는 고객 접점과 현장 실행을 연결해야 한다.",
+          script: "네 번째 장면은 AI가 답변에서 끝나지 않고 고객의 다음 행동을 만들어야 한다는 메시지입니다."
+        },
+        {
+          id: "scene-04-cta",
+          title: "CTA는 고객 맥락을 유지한 상태에서 제안된다",
+          subtitle: "예약 버튼도 개인화된 다음 단계",
+          bullets: [
+            "고객 조건에 맞는 매장, 상담 시간, 설치 옵션을 제안",
+            "고객이 다시 설명하지 않도록 대화 맥락을 함께 전달",
+            "온라인 채널의 의도를 오프라인 실행 계획으로 변환"
+          ],
+          keyMessage: "전환 CTA는 단순 버튼이 아니라 실행 제안이다.",
+          script: "상담 예약 CTA는 일반적인 버튼이 아니라 고객 맥락을 반영한 다음 실행 제안이어야 합니다."
+        },
+        {
+          id: "scene-04-handoff",
+          title: "Sales AI Team이 채널 간 문맥을 이어준다",
+          subtitle: "온라인 상담 내용이 매장과 설치 단계로 전달",
+          bullets: [
+            "AI Shopping Agent가 만든 요약을 Sales Copilot이 이어받음",
+            "매장 직원은 고객의 관심 제품과 고민 지점을 미리 확인",
+            "현장 상담은 처음부터 더 높은 품질로 시작"
+          ],
+          keyMessage: "채널 전환의 품질은 문맥 전달에서 결정된다.",
+          script: "Sales AI Team의 가치는 여러 AI 역할이 고객 문맥을 끊기지 않게 전달하는 데 있습니다."
+        }
+      ]
+    }
+  },
+  {
+    id: "scene-05",
+    title: "Sales Copilot",
+    description: "고객 대화 맥락이 매장 직원용 Sales Copilot 화면으로 전달되는 장면",
+    demo: {
+      videoSrc: "assets/videos/demo.mp4",
+      trim: {
+        start: 66,
+        end: 84
+      },
+      playbackRate: 1,
+      timeEvents: [
+        {
+          id: "scene-05-summary",
+          time: 70,
+          type: "syncExplain",
+          explainStepId: "scene-05-summary"
+        },
+        {
+          id: "scene-05-quality",
+          time: 77,
+          type: "syncExplain",
+          explainStepId: "scene-05-quality"
+        }
+      ],
+      interactions: [],
+      zoomEvents: []
+    },
+    explain: {
+      defaultStepId: "scene-05-default",
+      steps: [
+        {
+          id: "scene-05-default",
+          title: "고객 기억이 상담 품질을 높인다",
+          subtitle: "Sales Copilot은 고객 문맥을 매장 직원에게 전달",
+          bullets: [
+            "고객이 온라인에서 말한 조건과 우려를 상담 전에 확인",
+            "추천 제품, 비교 후보, 미해결 질문을 한 화면에 요약",
+            "직원은 제품 설명보다 고객 문제 해결에 집중"
+          ],
+          keyMessage: "고객 기억이 상담 품질을 높인다.",
+          script: "마지막 장면은 고객 대화 맥락이 매장 직원에게 전달되어 상담 품질을 높이는 모습을 보여줍니다."
+        },
+        {
+          id: "scene-05-summary",
+          title: "Sales Copilot은 상담 준비 시간을 줄인다",
+          subtitle: "온라인 대화 요약이 직원의 시작점을 바꾼다",
+          bullets: [
+            "고객 프로필, 관심 제품, 제약 조건을 즉시 파악",
+            "반복 질문을 줄이고 상담을 더 빠르게 본론으로 이동",
+            "직원 경험과 AI 요약이 결합되어 상담 일관성 강화"
+          ],
+          keyMessage: "매장 직원은 고객을 처음부터 다시 이해하지 않아도 된다.",
+          script: "Sales Copilot은 직원이 고객을 다시 파악하는 시간을 줄이고, 상담을 바로 핵심 이슈에서 시작하게 합니다."
+        },
+        {
+          id: "scene-05-quality",
+          title: "Sales AI Team은 고객 경험을 하나로 묶는다",
+          subtitle: "AI Shopping Agent에서 Sales Copilot까지 이어지는 운영 모델",
+          bullets: [
+            "AI Shopping Agent는 고객 의도와 추천 근거를 생성",
+            "Knowledge Atlas는 공통 지식과 판단 기준을 제공",
+            "Sales Copilot은 현장 실행과 상담 품질을 끌어올림"
+          ],
+          keyMessage: "AI는 개별 기능이 아니라 연결된 팀으로 설계되어야 한다.",
+          script: "결론적으로 Sales AI Team은 개별 기능 묶음이 아니라 고객 여정을 이어주는 역할 체계로 설계되어야 합니다."
+        }
+      ]
+    }
+  }
+];
+
+exports.scenes = scenes;
+};
+
+__factories["src/authorView.js"] = function(exports) {
+const { videos } = __require("data/videos.js");
+const { renderShell } = __require("src/viewShell.js");
+
+const firstVideo = normalizeVideo(videos[0]);
+
+const authorState = {
+  videoSrc: firstVideo.src || "assets/videos/demo.mp4",
+  sceneTitle: "Authoring Draft Scene",
+  sceneDescription: "Generated from Authoring View",
+  trimStart: 0,
+  trimEnd: 0,
+  currentTime: 0,
+  duration: 0,
+  lastPoint: { x: 50, y: 50 },
+  isAddingHotspot: false,
+  copyStatus: "",
+  explainSteps: [
+    {
+      id: "explain-default",
+      title: "기본 설명",
+      subtitle: "",
+      bullets: [],
+      keyMessage: "",
+      script: ""
+    }
+  ],
+  defaultStepId: "explain-default",
+  hotspots: [],
+  timeEvents: [],
+  zoomEvents: []
+};
+
+let cleanupAuthorView = null;
+
+function renderAuthorView({ scenes, state }) {
+  return renderShell({
+    label: "Authoring",
+    scenes,
+    state,
+    content: `
+      <section class="author-layout">
+        <div class="author-workspace">
+          <p class="eyebrow">Authoring Mode</p>
+          <h1>Scene JSON Builder</h1>
+
+          <form class="author-video-control" data-author-load-form>
+            <label for="author-video-select">Video Source</label>
+            <div class="author-video-source">
+              <select id="author-video-select" data-author-video-select>
+                ${renderVideoOptions()}
+              </select>
+              <input id="author-video-src" type="text" value="${escapeAttribute(authorState.videoSrc)}" data-author-video-src>
+              <button type="submit">Load</button>
+            </div>
+          </form>
+
+          <div class="author-toolbar">
+            <button type="button" data-author-action="play">Play</button>
+            <button type="button" data-author-action="pause">Pause</button>
+            <button type="button" data-author-action="set-trim-start">Set Start</button>
+            <button type="button" data-author-action="set-trim-end">Set End</button>
+            <button type="button" data-author-action="seek-trim-start">Go Start</button>
+            <span>Current Time: <strong data-author-current-time>${formatSeconds(authorState.currentTime)}</strong></span>
+            <span>Trim: <strong data-author-trim>${formatSeconds(authorState.trimStart)} - ${formatSeconds(getTrimEnd())}</strong></span>
+            <span>Click X/Y: <strong data-author-point>${formatPercent(authorState.lastPoint.x)}, ${formatPercent(authorState.lastPoint.y)}</strong></span>
+          </div>
+
+          <div class="author-video-frame ${authorState.isAddingHotspot ? "is-armed" : ""}" data-author-video-frame>
+            <video
+              class="author-video"
+              src="${escapeAttribute(authorState.videoSrc)}"
+              preload="metadata"
+              controls
+              playsinline
+              data-author-video
+            ></video>
+            <div class="author-click-marker" data-author-click-marker></div>
+            <div class="author-hotspot-layer" data-author-hotspot-layer>
+              ${renderAuthorHotspots()}
+            </div>
+          </div>
+        </div>
+
+        <aside class="author-panel">
+          <section class="author-card">
+            <h2>Scene</h2>
+            <div class="author-grid">
+              <label>Title <input type="text" value="${escapeAttribute(authorState.sceneTitle)}" data-scene-title></label>
+              <label>Description <input type="text" value="${escapeAttribute(authorState.sceneDescription)}" data-scene-description></label>
+              <label>Trim Start <input type="number" min="0" step="0.01" value="${round(authorState.trimStart)}" data-trim-start></label>
+              <label>Trim End <input type="number" min="0" step="0.01" value="${round(getTrimEnd())}" data-trim-end></label>
+            </div>
+          </section>
+
+          <section class="author-card">
+            <h2>Explain Step</h2>
+            <div class="author-grid">
+              <label>Step ID <input type="text" value="explain-step" data-explain-id></label>
+              <label>Title <input type="text" value="설명 제목" data-explain-title></label>
+              <label>Subtitle <input type="text" value="" data-explain-subtitle></label>
+              <label>Key Message <input type="text" value="" data-explain-key-message></label>
+            </div>
+            <label class="author-wide-label">Bullets <textarea data-explain-bullets placeholder="한 줄에 하나씩 입력"></textarea></label>
+            <label class="author-wide-label">Script <textarea data-explain-script placeholder="발표자 스크립트"></textarea></label>
+            <div class="author-section-actions">
+              <button type="button" data-author-action="add-explain-step">Add / Update Step</button>
+              <button type="button" data-author-action="set-default-step">Set Default</button>
+            </div>
+            <div class="author-step-list" data-author-step-list>
+              ${renderExplainStepList()}
+            </div>
+          </section>
+
+          <section class="author-card">
+            <h2>Hotspot</h2>
+            <div class="author-grid">
+              <label>Label <input type="text" value="제품 추천 카드" data-hotspot-label></label>
+              <label>Width % <input type="number" min="1" max="100" step="0.1" value="18" data-hotspot-width></label>
+              <label>Height % <input type="number" min="1" max="100" step="0.1" value="12" data-hotspot-height></label>
+              <label>Explain Step
+                <select data-hotspot-explain-step-id>
+                  ${renderExplainStepOptions()}
+                </select>
+              </label>
+            </div>
+            <button type="button" class="${authorState.isAddingHotspot ? "active-toggle" : ""}" data-author-action="arm-hotspot">
+              ${authorState.isAddingHotspot ? "Click Video to Place" : "Add Hotspot"}
+            </button>
+          </section>
+
+          <section class="author-card">
+            <h2>Time Event</h2>
+            <div class="author-grid">
+              <label>Type
+                <select data-time-event-type>
+                  <option value="syncExplain">syncExplain</option>
+                  <option value="pause">pause</option>
+                  <option value="nextScene">nextScene</option>
+                </select>
+              </label>
+              <label>Explain Step
+                <select data-time-event-explain-step-id>
+                  ${renderExplainStepOptions()}
+                </select>
+              </label>
+            </div>
+            <button type="button" data-author-action="add-time-event">Add Time Event</button>
+          </section>
+
+          <section class="author-card">
+            <h2>Zoom Event</h2>
+            <div class="author-grid">
+              <label>Scale <input type="number" min="0.1" step="0.05" value="1.8" data-zoom-scale></label>
+              <label>Duration <input type="number" min="0" step="0.1" value="0.5" data-zoom-duration></label>
+              <label>Origin X % <input type="number" min="0" max="100" step="0.1" value="${round(authorState.lastPoint.x)}" data-zoom-x></label>
+              <label>Origin Y % <input type="number" min="0" max="100" step="0.1" value="${round(authorState.lastPoint.y)}" data-zoom-y></label>
+            </div>
+            <div class="author-section-actions">
+              <button type="button" data-author-action="add-zoom-event">Add Zoom Event</button>
+              <button type="button" data-author-action="add-zoom-reset">Add Reset Zoom</button>
+            </div>
+          </section>
+
+          <section class="author-card author-preview-card">
+            <div class="author-preview-header">
+              <h2>Generated Scene Entry</h2>
+              <button type="button" data-author-action="copy-json">Copy JSON</button>
+            </div>
+            <textarea readonly data-author-json-preview></textarea>
+            <p class="author-copy-status" data-author-copy-status>${escapeHtml(authorState.copyStatus)}</p>
+          </section>
+        </aside>
+      </section>
+    `
+  });
+}
+
+function mountAuthorView() {
+  if (cleanupAuthorView) cleanupAuthorView();
+
+  const controller = new AbortController();
+  const { signal } = controller;
+  const root = document.querySelector(".author-layout");
+  const video = document.querySelector("[data-author-video]");
+  const frame = document.querySelector("[data-author-video-frame]");
+
+  cleanupAuthorView = () => controller.abort();
+
+  if (!root || !video || !frame) return;
+
+  syncFormFromState();
+  updatePreview();
+  updateMarker();
+
+  root.addEventListener("submit", (event) => {
+    const form = event.target.closest("[data-author-load-form]");
+    if (!form) return;
+
+    event.preventDefault();
+    loadVideo(video);
+  }, { signal });
+
+  root.addEventListener("change", (event) => {
+    const videoSelect = event.target.closest("[data-author-video-select]");
+    if (videoSelect) {
+      const selected = normalizeVideo(videos[videoSelect.selectedIndex]);
+      if (selected.src) {
+        const input = document.querySelector("[data-author-video-src]");
+        if (input) input.value = selected.src;
+        authorState.videoSrc = selected.src;
+        loadVideo(video);
+      }
+    }
+
+    updateStateFromForm();
+    updatePreview();
+  }, { signal });
+
+  root.addEventListener("input", () => {
+    updateStateFromForm();
+    updateTrimReadout();
+    updatePreview();
+  }, { signal });
+
+  root.addEventListener("click", (event) => {
+    const actionControl = event.target.closest("[data-author-action]");
+    if (!actionControl) return;
+
+    const action = actionControl.dataset.authorAction;
+    if (action === "play") video.play().catch(() => {});
+    if (action === "pause") video.pause();
+    if (action === "set-trim-start") setTrimStart();
+    if (action === "set-trim-end") setTrimEnd();
+    if (action === "seek-trim-start") seekVideo(video, authorState.trimStart);
+    if (action === "arm-hotspot") toggleHotspotPlacement();
+    if (action === "add-explain-step") addExplainStep();
+    if (action === "set-default-step") setDefaultExplainStep();
+    if (action === "add-time-event") addTimeEvent();
+    if (action === "add-zoom-event") addZoomEvent(false);
+    if (action === "add-zoom-reset") addZoomEvent(true);
+    if (action === "copy-json") copyJson();
+  }, { signal });
+
+  frame.addEventListener("click", (event) => {
+    if (event.target.closest("[data-author-action]")) return;
+
+    const point = getClickPercent(event, frame);
+    authorState.lastPoint = point;
+    syncZoomOriginInputs(point);
+    updatePointReadout();
+    updateMarker();
+
+    if (authorState.isAddingHotspot) {
+      addHotspot(point);
+      authorState.isAddingHotspot = false;
+      frame.classList.remove("is-armed");
+      const button = document.querySelector('[data-author-action="arm-hotspot"]');
+      if (button) {
+        button.classList.remove("active-toggle");
+        button.textContent = "Add Hotspot";
+      }
+    }
+  }, { signal });
+
+  video.addEventListener("timeupdate", () => {
+    authorState.currentTime = video.currentTime || 0;
+    updateCurrentTime();
+  }, { signal });
+
+  video.addEventListener("loadedmetadata", () => {
+    authorState.duration = Number.isFinite(video.duration) ? video.duration : 0;
+    if (!authorState.trimEnd || authorState.trimEnd < authorState.trimStart) {
+      authorState.trimEnd = round(authorState.duration || authorState.currentTime || 0);
+    }
+    syncFormFromState();
+    updateTrimReadout();
+    updatePreview();
+  }, { signal });
+}
+
+function loadVideo(video) {
+  const input = document.querySelector("[data-author-video-src]");
+  authorState.videoSrc = input?.value.trim() || "assets/videos/demo.mp4";
+  video.src = authorState.videoSrc;
+  video.load();
+  updatePreview();
+}
+
+function setTrimStart() {
+  authorState.trimStart = round(authorState.currentTime);
+  if (authorState.trimEnd <= authorState.trimStart) {
+    authorState.trimEnd = round(authorState.duration || authorState.trimStart + 5);
+  }
+  syncFormFromState();
+  updatePreview();
+}
+
+function setTrimEnd() {
+  authorState.trimEnd = round(authorState.currentTime);
+  if (authorState.trimEnd <= authorState.trimStart) {
+    authorState.trimEnd = round(authorState.trimStart + 5);
+  }
+  syncFormFromState();
+  updatePreview();
+}
+
+function seekVideo(video, time) {
+  const safeTime = Math.max(0, Number(time || 0));
+  video.currentTime = safeTime;
+  authorState.currentTime = safeTime;
+  updateCurrentTime();
+}
+
+function toggleHotspotPlacement() {
+  authorState.isAddingHotspot = !authorState.isAddingHotspot;
+  const frame = document.querySelector("[data-author-video-frame]");
+  const button = document.querySelector('[data-author-action="arm-hotspot"]');
+
+  if (frame) frame.classList.toggle("is-armed", authorState.isAddingHotspot);
+  if (button) {
+    button.classList.toggle("active-toggle", authorState.isAddingHotspot);
+    button.textContent = authorState.isAddingHotspot ? "Click Video to Place" : "Add Hotspot";
+  }
+}
+
+function addExplainStep() {
+  const id = slugify(getInputValue("[data-explain-id]", "explain-step"));
+  const step = {
+    id,
+    title: getInputValue("[data-explain-title]", id),
+    subtitle: getInputValue("[data-explain-subtitle]", ""),
+    bullets: getTextareaLines("[data-explain-bullets]"),
+    keyMessage: getInputValue("[data-explain-key-message]", ""),
+    script: getTextareaValue("[data-explain-script]", "")
+  };
+  const existingIndex = authorState.explainSteps.findIndex((item) => item.id === id);
+
+  if (existingIndex >= 0) authorState.explainSteps[existingIndex] = step;
+  else authorState.explainSteps.push(step);
+
+  if (!authorState.defaultStepId) authorState.defaultStepId = id;
+  refreshExplainStepControls();
+  updatePreview();
+}
+
+function setDefaultExplainStep() {
+  const id = slugify(getInputValue("[data-explain-id]", authorState.defaultStepId));
+  if (authorState.explainSteps.some((step) => step.id === id)) {
+    authorState.defaultStepId = id;
+    refreshExplainStepControls();
+    updatePreview();
+  }
+}
+
+function addHotspot(point) {
+  const label = getInputValue("[data-hotspot-label]", "Hotspot");
+  const explainStepId = getInputValue("[data-hotspot-explain-step-id]", authorState.defaultStepId);
+  const end = Math.min(getTrimEnd(), Math.max(authorState.currentTime + 5, authorState.currentTime));
+  const hotspot = {
+    id: `hotspot-${slugify(label)}-${authorState.hotspots.length + 1}`,
+    type: "hotspot",
+    timeRange: {
+      start: round(authorState.currentTime),
+      end: round(end)
+    },
+    label,
+    showLabel: true,
+    x: round(point.x),
+    y: round(point.y),
+    width: getNumberInput("[data-hotspot-width]", 18),
+    height: getNumberInput("[data-hotspot-height]", 12),
+    action: {
+      type: "syncExplain",
+      explainStepId
+    }
+  };
+
+  authorState.hotspots.push(hotspot);
+  renderHotspotLayer();
+  updatePreview();
+}
+
+function addTimeEvent() {
+  const type = getInputValue("[data-time-event-type]", "syncExplain");
+  const event = {
+    id: `time-event-${type}-${authorState.timeEvents.length + 1}`,
+    time: round(authorState.currentTime),
+    type
+  };
+
+  if (type === "syncExplain") {
+    event.explainStepId = getInputValue("[data-time-event-explain-step-id]", authorState.defaultStepId);
+  }
+
+  authorState.timeEvents.push(event);
+  updatePreview();
+}
+
+function addZoomEvent(isReset) {
+  authorState.zoomEvents.push({
+    id: `zoom-event-${isReset ? "reset" : "focus"}-${authorState.zoomEvents.length + 1}`,
+    time: round(authorState.currentTime),
+    duration: getNumberInput("[data-zoom-duration]", 0.5),
+    scale: isReset ? 1 : getNumberInput("[data-zoom-scale]", 1.8),
+    x: isReset ? 50 : clampPercent(getNumberInput("[data-zoom-x]", authorState.lastPoint.x)),
+    y: isReset ? 50 : clampPercent(getNumberInput("[data-zoom-y]", authorState.lastPoint.y))
+  });
+  updatePreview();
+}
+
+async function copyJson() {
+  const preview = document.querySelector("[data-author-json-preview]");
+  if (!preview) return;
+
+  try {
+    await navigator.clipboard.writeText(preview.value);
+    authorState.copyStatus = "Copied to clipboard.";
+  } catch {
+    preview.select();
+    document.execCommand("copy");
+    authorState.copyStatus = "Copied to clipboard.";
+  }
+
+  const status = document.querySelector("[data-author-copy-status]");
+  if (status) status.textContent = authorState.copyStatus;
+}
+
+function getSceneJson() {
+  updateStateFromForm();
+
+  return {
+    id: `scene-${slugify(authorState.sceneTitle)}`,
+    title: authorState.sceneTitle,
+    description: authorState.sceneDescription,
+    demo: {
+      videoSrc: authorState.videoSrc,
+      trim: {
+        start: round(authorState.trimStart),
+        end: round(getTrimEnd())
+      },
+      playbackRate: 1,
+      timeEvents: authorState.timeEvents,
+      interactions: authorState.hotspots,
+      zoomEvents: authorState.zoomEvents
+    },
+    explain: {
+      defaultStepId: authorState.defaultStepId,
+      steps: authorState.explainSteps
+    }
+  };
+}
+
+function updateStateFromForm() {
+  authorState.sceneTitle = getInputValue("[data-scene-title]", authorState.sceneTitle);
+  authorState.sceneDescription = getInputValue("[data-scene-description]", authorState.sceneDescription);
+  authorState.trimStart = getNumberInput("[data-trim-start]", authorState.trimStart);
+  authorState.trimEnd = getNumberInput("[data-trim-end]", authorState.trimEnd);
+}
+
+function syncFormFromState() {
+  setInputValue("[data-scene-title]", authorState.sceneTitle);
+  setInputValue("[data-scene-description]", authorState.sceneDescription);
+  setInputValue("[data-trim-start]", round(authorState.trimStart));
+  setInputValue("[data-trim-end]", round(getTrimEnd()));
+  updateTrimReadout();
+}
+
+function updatePreview() {
+  const preview = document.querySelector("[data-author-json-preview]");
+  if (preview) preview.value = JSON.stringify(getSceneJson(), null, 2);
+}
+
+function updateCurrentTime() {
+  const readout = document.querySelector("[data-author-current-time]");
+  if (readout) readout.textContent = formatSeconds(authorState.currentTime);
+}
+
+function updateTrimReadout() {
+  const readout = document.querySelector("[data-author-trim]");
+  if (readout) readout.textContent = `${formatSeconds(authorState.trimStart)} - ${formatSeconds(getTrimEnd())}`;
+}
+
+function updatePointReadout() {
+  const readout = document.querySelector("[data-author-point]");
+  if (readout) readout.textContent = `${formatPercent(authorState.lastPoint.x)}, ${formatPercent(authorState.lastPoint.y)}`;
+}
+
+function syncZoomOriginInputs(point) {
+  const xInput = document.querySelector("[data-zoom-x]");
+  const yInput = document.querySelector("[data-zoom-y]");
+  if (xInput) xInput.value = round(point.x);
+  if (yInput) yInput.value = round(point.y);
+}
+
+function updateMarker() {
+  const marker = document.querySelector("[data-author-click-marker]");
+  if (!marker) return;
+
+  marker.style.left = `${authorState.lastPoint.x}%`;
+  marker.style.top = `${authorState.lastPoint.y}%`;
+}
+
+function refreshExplainStepControls() {
+  const list = document.querySelector("[data-author-step-list]");
+  const hotspotSelect = document.querySelector("[data-hotspot-explain-step-id]");
+  const eventSelect = document.querySelector("[data-time-event-explain-step-id]");
+  if (list) list.innerHTML = renderExplainStepList();
+  if (hotspotSelect) hotspotSelect.innerHTML = renderExplainStepOptions(hotspotSelect.value);
+  if (eventSelect) eventSelect.innerHTML = renderExplainStepOptions(eventSelect.value);
+}
+
+function renderHotspotLayer() {
+  const layer = document.querySelector("[data-author-hotspot-layer]");
+  if (layer) layer.innerHTML = renderAuthorHotspots();
+}
+
+function renderVideoOptions() {
+  return videos.map((video) => {
+    const item = normalizeVideo(video);
+    return `<option value="${escapeAttribute(item.src)}" ${item.src === authorState.videoSrc ? "selected" : ""}>${escapeHtml(item.label || item.src)}</option>`;
+  }).join("");
+}
+
+function renderExplainStepOptions(selectedId = authorState.defaultStepId) {
+  return authorState.explainSteps.map((step) => `
+    <option value="${escapeAttribute(step.id)}" ${step.id === selectedId ? "selected" : ""}>${escapeHtml(step.title || step.id)}</option>
+  `).join("");
+}
+
+function renderExplainStepList() {
+  return authorState.explainSteps.map((step) => `
+    <span class="${step.id === authorState.defaultStepId ? "is-default" : ""}">
+      ${escapeHtml(step.id === authorState.defaultStepId ? `${step.title} (default)` : step.title)}
+    </span>
+  `).join("");
+}
+
+function renderAuthorHotspots() {
+  return authorState.hotspots.map((hotspot) => `
+    <span
+      class="author-hotspot"
+      style="left:${hotspot.x}%;top:${hotspot.y}%;width:${hotspot.width}%;height:${hotspot.height}%;"
+      title="${escapeAttribute(hotspot.label)}"
+    >${escapeHtml(hotspot.label)}</span>
+  `).join("");
+}
+
+function getClickPercent(event, element) {
+  const rect = element.getBoundingClientRect();
+  return {
+    x: clampPercent(((event.clientX - rect.left) / rect.width) * 100),
+    y: clampPercent(((event.clientY - rect.top) / rect.height) * 100)
+  };
+}
+
+function getTrimEnd() {
+  return authorState.trimEnd || authorState.duration || authorState.currentTime || authorState.trimStart;
+}
+
+function getInputValue(selector, fallback) {
+  return document.querySelector(selector)?.value.trim() || fallback;
+}
+
+function getTextareaValue(selector, fallback) {
+  return document.querySelector(selector)?.value.trim() || fallback;
+}
+
+function getTextareaLines(selector) {
+  return getTextareaValue(selector, "").split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+function getNumberInput(selector, fallback) {
+  const value = Number(document.querySelector(selector)?.value);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function setInputValue(selector, value) {
+  const input = document.querySelector(selector);
+  if (input) input.value = value;
+}
+
+function normalizeVideo(video) {
+  if (!video) return { src: "", label: "" };
+  if (typeof video === "string") return { src: video, label: video.split("/").pop() || video };
+  return {
+    src: video.src || "",
+    label: video.label || video.src || ""
+  };
+}
+
+function slugify(value) {
+  return String(value).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "item";
+}
+
+function clampPercent(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return 50;
+  return Math.max(0, Math.min(100, numericValue));
+}
+
+function round(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function formatSeconds(value) {
+  return `${round(value).toFixed(2)}s`;
+}
+
+function formatPercent(value) {
+  return `${round(value).toFixed(2)}%`;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value);
+}
+
+exports.renderAuthorView = renderAuthorView;
+exports.mountAuthorView = mountAuthorView;
+};
+
+__factories["data/videos.js"] = function(exports) {
+const videos = [
+  {
+    src: "assets/videos/demo.mp4",
+    label: "demo.mp4"
+  }
+];
+
+exports.videos = videos;
+};
+
+__factories["src/viewShell.js"] = function(exports) {
+function renderShell({ content, label, scenes, state }) {
+  return `
+    <main class="screen">
+      <header class="topbar">
+        <div>
+          <strong>Dual Sync Presentation</strong>
+          <span>${label}</span>
+        </div>
+        <div class="status">
+          <span>Step ${state.currentStep + 1}/${scenes.length}</span>
+          <span data-timer>${formatTime(state.remainingSec)}</span>
+          <span>${state.isPlaying ? "PLAY" : "PAUSE"}</span>
+        </div>
+      </header>
+      <div class="progress"><div style="width:${progressPercent(state, scenes)}%"></div></div>
+      ${content}
+    </main>
+  `;
+}
+
+function formatTime(seconds) {
+  const safeTotal = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(safeTotal / 60).toString().padStart(2, "0");
+  const safeSeconds = (safeTotal % 60).toString().padStart(2, "0");
+  return `${minutes}:${safeSeconds}`;
+}
+
+function progressPercent(state, scenes) {
+  return ((state.currentStep + 1) / scenes.length) * 100;
+}
+
+exports.renderShell = renderShell;
+exports.formatTime = formatTime;
+};
+
+__factories["src/controllerView.js"] = function(exports) {
+const { renderShell } = __require("src/viewShell.js");
+
+function renderControllerView({ scene, scenes, state }) {
+  const next = scenes[state.currentStep + 1];
+  const currentExplainStep = getExplainStep(scene, state.currentExplainStepId);
+  const explainSteps = scene.explain?.steps || [];
+  const videoStatus = state.videoStatus || {};
+  const trim = scene.demo?.trim || { start: 0, end: 0 };
+  const playbackRates = [0.5, 0.75, 1, 1.25, 1.5];
+  const currentPlaybackRate = state.playbackRate || scene.demo.playbackRate || 1;
+
+  return renderShell({
+    label: "Controller",
+    scenes,
+    state,
+    content: `
+      <section class="controller-layout">
+        <div class="controller-main">
+          <p class="eyebrow">Presenter Controller</p>
+          <div class="controller-current">
+            <div>
+              <span class="console-label">현재 Scene</span>
+              <h1>${padNumber(state.currentStep + 1)}. ${scene.title}</h1>
+              <p class="controller-description">${scene.description}</p>
+            </div>
+            <div class="console-state ${state.isPlaying ? "is-playing" : ""}">
+              <strong>${state.isPlaying ? "PLAY" : "PAUSE"}</strong>
+              <span>Speed ${formatPlaybackRate(currentPlaybackRate)}x</span>
+            </div>
+          </div>
+
+          <div class="video-status" aria-label="Demo video status">
+            <span>현재 영상 시간 ${formatVideoClock(videoStatus.currentTime, trim.start)} / ${formatVideoClock(trim.end, 0)}</span>
+            <span>Scene Time ${formatVideoClock(getSceneElapsed(videoStatus.currentTime, trim.start), 0)} / ${formatVideoClock(getSceneDuration(trim), 0)}</span>
+            <span>현재 Explain ${currentExplainStep.title || "none"}</span>
+          </div>
+
+          <div class="controls transport-controls">
+            <button type="button" data-action="prev">Prev</button>
+            <button type="button" class="primary" data-action="play-toggle">${state.isPlaying ? "Pause" : "Play"}</button>
+            <button type="button" data-action="next">Next</button>
+            <button type="button" data-action="restart-scene">Restart Scene</button>
+            <button type="button" data-action="reset-zoom">Reset Zoom</button>
+            <button
+              type="button"
+              class="${state.debugHotspots ? "active-toggle" : ""}"
+              data-action="toggle-debug-hotspots"
+              aria-pressed="${state.debugHotspots ? "true" : "false"}"
+            >Hotspot Debug ${state.debugHotspots ? "On" : "Off"}</button>
+          </div>
+
+          <form class="jump-time-control" data-jump-form>
+            <label for="jump-time">Jump to Time</label>
+            <div>
+              <input
+                id="jump-time"
+                type="number"
+                min="0"
+                max="${getSceneDuration(trim)}"
+                step="0.1"
+                inputmode="decimal"
+                placeholder="0.0"
+                data-jump-time
+              >
+              <button type="submit">Jump</button>
+            </div>
+          </form>
+
+          <div class="speed-control console-panel" aria-label="Playback speed">
+            <h2>Playback Speed</h2>
+            <div class="speed-buttons">
+              ${playbackRates.map((rate) => `
+                <button
+                  type="button"
+                  class="speed-button ${rate === currentPlaybackRate ? "active" : ""}"
+                  data-action="set-playback-rate"
+                  data-playback-rate="${rate}"
+                >${formatPlaybackRate(rate)}x</button>
+              `).join("")}
+            </div>
+          </div>
+
+          <div class="explain-control console-panel">
+            <h2>Explain Steps</h2>
+            <div class="explain-step-buttons">
+              ${explainSteps.map((step) => `
+                <button
+                  type="button"
+                  class="explain-step-button ${step.id === currentExplainStep.id ? "active" : ""}"
+                  data-action="sync-explain"
+                  data-explain-step-id="${step.id}"
+                >${step.title}</button>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+
+        <aside class="speaker-note">
+          <h2>Scene 목록</h2>
+          <div class="jump-grid">
+            ${scenes.map((item, index) => `
+              <button
+                type="button"
+                class="jump ${index === state.currentStep ? "active" : ""}"
+                data-action="set-step"
+                data-step="${index}"
+              >
+                <span>${padNumber(index + 1)}</span>
+                <strong>${item.title}</strong>
+              </button>
+            `).join("")}
+          </div>
+
+          <h2>Speaker Script</h2>
+          <p>${currentExplainStep.script || ""}</p>
+          <h2>다음 장면</h2>
+          <p>${next ? next.title : "마지막 장면입니다."}</p>
+          <div class="open-links">
+            <a href="index.html?view=demo" target="_blank">Open Demo View</a>
+            <a href="index.html?view=explain" target="_blank">Open Explain View</a>
+          </div>
+        </aside>
+      </section>
+    `
+  });
+}
+
+function formatVideoClock(seconds, fallback = 0) {
+  const numericSeconds = Number.isFinite(Number(seconds)) ? Number(seconds) : fallback;
+  const safeSeconds = Math.max(0, numericSeconds);
+  const minutes = Math.floor(safeSeconds / 60).toString().padStart(2, "0");
+  const remainingSeconds = (safeSeconds % 60).toFixed(2).padStart(5, "0");
+  return `${minutes}:${remainingSeconds}`;
+}
+
+function formatPlaybackRate(rate) {
+  return Number(rate || 1).toFixed(2).replace(/\.?0+$/, "");
+}
+
+function getSceneElapsed(currentTime, trimStart) {
+  return Math.max(0, Number(currentTime || trimStart || 0) - Number(trimStart || 0));
+}
+
+function getSceneDuration(trim) {
+  const start = Number(trim?.start || 0);
+  const end = Number(trim?.end || 0);
+  return Math.max(0, end - start);
+}
+
+function padNumber(number) {
+  return String(number).padStart(2, "0");
+}
+
+function getExplainStep(scene, explainStepId) {
+  const steps = scene.explain?.steps || [];
+  return steps.find((step) => step.id === explainStepId)
+    || steps.find((step) => step.id === scene.explain?.defaultStepId)
+    || steps[0]
+    || {};
+}
+
+exports.renderControllerView = renderControllerView;
+};
+
+__factories["src/demoView.js"] = function(exports) {
+const { renderShell } = __require("src/viewShell.js");
+
+function renderDemoView({ scene, scenes, state }) {
+  const demo = scene.demo;
+  const trim = demo.trim || { start: 0, end: 0 };
+  const queryDebug = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1";
+  const debugHotspots = state.debugHotspots || queryDebug;
+
+  return renderShell({
+    label: "Demo View",
+    scenes,
+    state,
+    content: `
+      <section class="demo-stage">
+        <div class="demo-copy">
+          <p class="eyebrow">Demo View</p>
+          <h1>${scene.title}</h1>
+          <p class="subtitle">${scene.description}</p>
+        </div>
+        <div class="video-frame ${debugHotspots ? "debug-hotspots" : ""}" data-video="missing" data-debug-hotspots="${debugHotspots ? "true" : "false"}">
+          <div class="video-layer" data-video-layer>
+            <video
+              class="demo-video"
+              data-demo-video
+              src="${demo.videoSrc}"
+              preload="metadata"
+              muted
+              playsinline
+              data-playback-rate="${demo.playbackRate}"
+              onloadeddata="this.closest('.video-frame').dataset.video='ready'"
+              onerror="this.closest('.video-frame').dataset.video='missing'"
+            ></video>
+            <div class="hotspot-layer" aria-label="Demo interaction hotspots">
+              ${renderHotspots(demo.interactions)}
+            </div>
+          </div>
+          <div class="video-fallback">
+            <strong>Demo video placeholder</strong>
+            <span>${demo.videoSrc} 파일이 없어도 발표 화면은 계속 표시됩니다.</span>
+          </div>
+        </div>
+        <div class="timeline-summary">
+          <span>Trim ${formatSeconds(trim.start)}-${formatSeconds(trim.end)}</span>
+          <span>Speed ${demo.playbackRate}x</span>
+          <span>${demo.timeEvents.length} time events</span>
+          <span>${demo.interactions.length} hotspots</span>
+          <span>${demo.zoomEvents.length} zoom events</span>
+        </div>
+      </section>
+    `
+  });
+}
+
+function renderHotspots(interactions = []) {
+  return interactions.filter((interaction) => interaction.type === "hotspot").map((interaction) => `
+    <button
+      type="button"
+      class="demo-hotspot"
+      data-hotspot-id="${interaction.id}"
+      data-time-start="${interaction.timeRange?.start ?? 0}"
+      data-time-end="${interaction.timeRange?.end ?? Number.POSITIVE_INFINITY}"
+      style="left:${interaction.x}%;top:${interaction.y}%;width:${interaction.width}%;height:${interaction.height}%;"
+      aria-label="${interaction.label}"
+      title="${interaction.label}"
+    >
+      ${interaction.showLabel ? `<span class="hotspot-label">${interaction.label}</span>` : ""}
+    </button>
+  `).join("");
+}
+
+function formatSeconds(seconds) {
+  return `${seconds.toFixed(1).replace(".0", "")}s`;
+}
+
+exports.renderDemoView = renderDemoView;
+};
+
+__factories["src/explainView.js"] = function(exports) {
+const { renderShell } = __require("src/viewShell.js");
+
+function renderExplainView({ scene, scenes, state }) {
+  const explain = scene.explain;
+  const currentStep = getExplainStep(explain, state.currentExplainStepId);
+  const bullets = currentStep.bullets || [];
+
+  return renderShell({
+    label: "Explain View",
+    scenes,
+    state,
+    content: `
+      <section class="hero explain-hero" data-explain-step-id="${currentStep.id}">
+        <div class="explain-content">
+          <p class="eyebrow">${scene.title}</p>
+          <h1>${currentStep.title}</h1>
+          ${currentStep.subtitle ? `<p class="lead">${currentStep.subtitle}</p>` : ""}
+          ${bullets.length ? `<ul class="bullet-list">${bullets.map((bullet) => `<li>${bullet}</li>`).join("")}</ul>` : ""}
+          ${currentStep.keyMessage ? `<div class="takeaway">${currentStep.keyMessage}</div>` : ""}
+          ${currentStep.script ? `
+            <aside class="speaker-script" aria-label="Speaker script">
+              <h2>Speaker Note</h2>
+              <p>${currentStep.script}</p>
+            </aside>
+          ` : ""}
+        </div>
+        <div class="explain-debug" aria-label="Explain debug information">
+          <span>${scene.title}</span>
+          <span>${currentStep.id}</span>
+        </div>
+      </section>
+    `
+  });
+}
+
+function getExplainStep(explain, explainStepId) {
+  const steps = explain?.steps || [];
+  return steps.find((step) => step.id === explainStepId)
+    || steps.find((step) => step.id === explain?.defaultStepId)
+    || steps[0]
+    || {};
+}
+
+exports.renderExplainView = renderExplainView;
+};
+
+__factories["src/state.js"] = function(exports) {
+const STORAGE_KEY = "dual-presentation-step";
+const DEBUG_HOTSPOTS_STORAGE_KEY = "dual-presentation-debug-hotspots";
+
+function createPresentationState(scenes) {
+  const initialStep = Number(localStorage.getItem(STORAGE_KEY) || 0);
+
+  const state = {
+    currentStep: clampStep(initialStep, scenes),
+    currentExplainStepId: getDefaultExplainStepId(scenes[clampStep(initialStep, scenes)]),
+    debugHotspots: localStorage.getItem(DEBUG_HOTSPOTS_STORAGE_KEY) === "true",
+    isPlaying: false,
+    playbackRate: getScenePlaybackRate(scenes[clampStep(initialStep, scenes)]),
+    timer: null,
+    remainingSec: getSceneDurationSec(scenes[clampStep(initialStep, scenes)]),
+    videoStatus: {
+      sceneIndex: clampStep(initialStep, scenes),
+      currentTime: 0,
+      duration: getSceneDurationSec(scenes[clampStep(initialStep, scenes)]),
+      isPlaying: false
+    }
+  };
+
+  function setStep(step) {
+    state.currentStep = clampStep(step, scenes);
+    localStorage.setItem(STORAGE_KEY, String(state.currentStep));
+    state.remainingSec = getSceneDurationSec(scenes[state.currentStep]);
+    state.currentExplainStepId = getDefaultExplainStepId(scenes[state.currentStep]);
+    state.playbackRate = getScenePlaybackRate(scenes[state.currentStep]);
+    state.videoStatus = {
+      sceneIndex: state.currentStep,
+      currentTime: scenes[state.currentStep]?.demo?.trim?.start || 0,
+      duration: getSceneDurationSec(scenes[state.currentStep]),
+      isPlaying: false
+    };
+  }
+
+  function setPlaying(isPlaying) {
+    state.isPlaying = isPlaying;
+  }
+
+  function setRemainingSec(seconds) {
+    state.remainingSec = seconds;
+  }
+
+  function setExplainStep(explainStepId) {
+    const scene = scenes[state.currentStep];
+    const exists = scene?.explain?.steps?.some((step) => step.id === explainStepId);
+    state.currentExplainStepId = exists ? explainStepId : getDefaultExplainStepId(scene);
+  }
+
+  function setVideoStatus(videoStatus) {
+    state.videoStatus = {
+      ...state.videoStatus,
+      ...videoStatus
+    };
+  }
+
+  function setDebugHotspots(debugHotspots) {
+    state.debugHotspots = Boolean(debugHotspots);
+    localStorage.setItem(DEBUG_HOTSPOTS_STORAGE_KEY, String(state.debugHotspots));
+  }
+
+  function setPlaybackRate(playbackRate) {
+    state.playbackRate = getSafePlaybackRate(playbackRate, getScenePlaybackRate(scenes[state.currentStep]));
+  }
+
+  function resetRemainingSec() {
+    state.remainingSec = getSceneDurationSec(scenes[state.currentStep]);
+  }
+
+  function clearTimer() {
+    clearInterval(state.timer);
+    state.timer = null;
+  }
+
+  function setTimer(timer) {
+    state.timer = timer;
+  }
+
+  return {
+    state,
+    setStep,
+    setPlaying,
+    setRemainingSec,
+    setExplainStep,
+    setVideoStatus,
+    setDebugHotspots,
+    setPlaybackRate,
+    resetRemainingSec,
+    clearTimer,
+    setTimer
+  };
+}
+
+function getDefaultExplainStepId(scene) {
+  return scene?.explain?.defaultStepId || scene?.explain?.steps?.[0]?.id || "";
+}
+
+function getScenePlaybackRate(scene) {
+  return getSafePlaybackRate(scene?.demo?.playbackRate, 1);
+}
+
+function getSafePlaybackRate(playbackRate, fallback) {
+  const numericRate = Number(playbackRate);
+  return Number.isFinite(numericRate) && numericRate > 0 ? numericRate : fallback;
+}
+
+function clampStep(step, scenes) {
+  return Math.max(0, Math.min(scenes.length - 1, step));
+}
+
+function getSceneDurationSec(scene) {
+  if (!scene) return 0;
+  if (Number.isFinite(scene.durationSec)) return scene.durationSec;
+
+  const trim = scene.demo?.trim;
+  if (Number.isFinite(trim?.start) && Number.isFinite(trim?.end)) {
+    return Math.max(0, Math.round(trim.end - trim.start));
+  }
+
+  return 0;
+}
+
+exports.createPresentationState = createPresentationState;
+exports.clampStep = clampStep;
+exports.getSceneDurationSec = getSceneDurationSec;
+};
+
+__factories["src/sync.js"] = function(exports) {
+const CHANNEL_NAME = "dual-presentation-sync-v1";
+
+function createSyncChannel(onMessage) {
+  const channel = new BroadcastChannel(CHANNEL_NAME);
+
+  channel.onmessage = (event) => {
+    const data = event.data;
+    if (!data || !data.type) return;
+    onMessage(data);
+  };
+
+  function broadcast(type, payload = {}) {
+    const message = { type, ...payload, sentAt: Date.now() };
+    channel.postMessage(message);
+  }
+
+  return { broadcast };
+}
+
+exports.createSyncChannel = createSyncChannel;
+};
+
+__factories["src/videoEngine.js"] = function(exports) {
+let activeEngine = null;
+
+function mountVideoTimeline({
+  scene,
+  sceneIndex,
+  isPlaying,
+  broadcast,
+  onPause,
+  onNextScene,
+  onSyncExplain,
+  onPlaybackStateChange,
+  playbackRate
+}) {
+  resetVideoForScene();
+
+  const video = document.querySelector("[data-demo-video]");
+  if (!video || !scene?.demo) return;
+
+  const frame = video.closest(".video-frame");
+  const videoLayer = document.querySelector("[data-video-layer]");
+  const demo = scene.demo;
+  const trim = normalizeTrim(demo.trim);
+  const executedEventIds = new Set();
+  const executedZoomEventIds = new Set();
+  const hotspotElements = Array.from(document.querySelectorAll("[data-hotspot-id]"));
+  const listeners = [];
+  let timeUpdateTimer = null;
+  let didInitialSeek = false;
+  let hasReachedTrimEnd = false;
+
+  setPlaybackRate(playbackRate ?? demo.playbackRate);
+  resetZoom(0);
+
+  function addListener(target, eventName, handler) {
+    target.addEventListener(eventName, handler);
+    listeners.push(() => target.removeEventListener(eventName, handler));
+  }
+
+  function seekToTrimStart() {
+    if (didInitialSeek) return;
+    didInitialSeek = true;
+    if (Number.isFinite(trim.start)) {
+      video.currentTime = trim.start;
+    }
+  }
+
+  function playVideo() {
+    seekToTrimStart();
+    video.play().catch(() => {
+      onPlaybackStateChange(false);
+      broadcastVideoTime();
+    });
+  }
+
+  function pauseVideo() {
+    video.pause();
+  }
+
+  function broadcastVideoTime() {
+    broadcast("VIDEO_TIME_UPDATE", {
+      sceneIndex,
+      currentTime: video.currentTime || 0,
+      duration: Number.isFinite(video.duration) ? video.duration : trim.end,
+      isPlaying: !video.paused
+    });
+  }
+
+  function handleTimeUpdate() {
+    const currentTime = video.currentTime || 0;
+
+    updateHotspots(currentTime);
+
+    for (const timeEvent of demo.timeEvents || []) {
+      if (!timeEvent?.id || executedEventIds.has(timeEvent.id)) continue;
+      if (currentTime < timeEvent.time) continue;
+
+      executedEventIds.add(timeEvent.id);
+      runTimeEvent(timeEvent);
+    }
+
+    for (const zoomEvent of demo.zoomEvents || []) {
+      if (!zoomEvent?.id || executedZoomEventIds.has(zoomEvent.id)) continue;
+      if (currentTime < zoomEvent.time) continue;
+
+      executedZoomEventIds.add(zoomEvent.id);
+      runZoomEvent(zoomEvent);
+    }
+
+    if (!hasReachedTrimEnd && Number.isFinite(trim.end) && currentTime >= trim.end) {
+      hasReachedTrimEnd = true;
+      video.currentTime = trim.end;
+      pauseVideo();
+      onPause();
+    }
+
+    broadcastVideoTime();
+  }
+
+  function updateHotspots(currentTime = video.currentTime || 0) {
+    const hotspotMap = new Map((demo.interactions || []).map((interaction) => [interaction.id, interaction]));
+
+    for (const element of hotspotElements) {
+      const interaction = hotspotMap.get(element.dataset.hotspotId);
+      const timeRange = interaction?.timeRange || {};
+      const start = Number.isFinite(timeRange.start) ? timeRange.start : trim.start;
+      const end = Number.isFinite(timeRange.end) ? timeRange.end : trim.end;
+      const isActive = currentTime >= start && currentTime <= end;
+
+      element.hidden = !isActive;
+      element.disabled = !isActive;
+      element.setAttribute("aria-hidden", String(!isActive));
+    }
+  }
+
+  function handleHotspotClick(event) {
+    const hotspot = event.target.closest("[data-hotspot-id]");
+    if (!hotspot) return;
+
+    const interaction = (demo.interactions || []).find((item) => item.id === hotspot.dataset.hotspotId);
+    if (!interaction?.action || hotspot.hidden || hotspot.disabled) return;
+
+    event.preventDefault();
+    runHotspotAction(interaction.action);
+  }
+
+  function runHotspotAction(action) {
+    if (action.type === "syncExplain" && action.explainStepId) {
+      onSyncExplain(action.explainStepId);
+    }
+
+    if (action.type === "pause") {
+      pauseVideo();
+      onPause();
+    }
+
+    if (action.type === "jumpToTime") {
+      activeEngine?.seek(action.time);
+    }
+
+    if (action.type === "nextScene") {
+      pauseVideo();
+      onNextScene();
+    }
+  }
+
+  function runTimeEvent(timeEvent) {
+    if (timeEvent.type === "pause") {
+      pauseVideo();
+      onPause();
+    }
+
+    if (timeEvent.type === "syncExplain" && timeEvent.explainStepId) {
+      onSyncExplain(timeEvent.explainStepId);
+    }
+
+    if (timeEvent.type === "nextScene") {
+      pauseVideo();
+      onNextScene();
+    }
+  }
+
+  function runZoomEvent(zoomEvent) {
+    applyZoom({
+      scale: zoomEvent.scale,
+      x: zoomEvent.x,
+      y: zoomEvent.y,
+      duration: zoomEvent.duration
+    });
+
+    if (zoomEvent.explainStepId) {
+      onSyncExplain(zoomEvent.explainStepId);
+    }
+  }
+
+  function applyZoom({ scale = 1, x = 50, y = 50, duration = 0.5 } = {}) {
+    if (!videoLayer) return;
+
+    const safeScale = getSafePositiveNumber(scale, 1);
+    const safeX = clampPercent(x, 50);
+    const safeY = clampPercent(y, 50);
+    const safeDuration = getSafeNonNegativeNumber(duration, 0.5);
+
+    videoLayer.style.transform = `scale(${safeScale})`;
+    videoLayer.style.transformOrigin = `${safeX}% ${safeY}%`;
+    videoLayer.style.transitionDuration = `${safeDuration}s`;
+  }
+
+  function resetZoom(duration = 0.5) {
+    applyZoom({ scale: 1, x: 50, y: 50, duration });
+  }
+
+  function setPlaybackRate(nextPlaybackRate) {
+    video.playbackRate = getSafePositiveNumber(nextPlaybackRate, getSafePositiveNumber(demo.playbackRate, 1));
+  }
+
+  addListener(video, "loadedmetadata", () => {
+    seekToTrimStart();
+    updateHotspots();
+    broadcastVideoTime();
+    if (isPlaying) playVideo();
+  });
+
+  addListener(video, "loadeddata", () => {
+    if (frame) frame.dataset.video = "ready";
+  });
+
+  addListener(video, "error", () => {
+    if (frame) frame.dataset.video = "missing";
+    onPlaybackStateChange(false);
+    broadcastVideoTime();
+  });
+
+  addListener(video, "timeupdate", handleTimeUpdate);
+  addListener(video, "play", () => {
+    onPlaybackStateChange(true);
+    broadcastVideoTime();
+  });
+  addListener(video, "pause", () => {
+    onPlaybackStateChange(false);
+    broadcastVideoTime();
+  });
+
+  timeUpdateTimer = window.setInterval(broadcastVideoTime, 500);
+  updateHotspots(trim.start);
+
+  for (const hotspotElement of hotspotElements) {
+    addListener(hotspotElement, "click", handleHotspotClick);
+  }
+
+  activeEngine = {
+    play: playVideo,
+    pause: pauseVideo,
+    seek(time) {
+      const safeTime = clampTime(time, trim);
+      didInitialSeek = true;
+      hasReachedTrimEnd = false;
+      video.currentTime = safeTime;
+      updateHotspots(safeTime);
+      broadcastVideoTime();
+    },
+    restart() {
+      executedEventIds.clear();
+      executedZoomEventIds.clear();
+      hasReachedTrimEnd = false;
+      didInitialSeek = true;
+      resetZoom(0);
+      video.currentTime = trim.start;
+      pauseVideo();
+      updateHotspots(trim.start);
+      broadcastVideoTime();
+    },
+    resetZoom,
+    setPlaybackRate,
+    cleanup() {
+      if (timeUpdateTimer) window.clearInterval(timeUpdateTimer);
+      listeners.forEach((removeListener) => removeListener());
+      pauseVideo();
+    }
+  };
+
+  if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+    seekToTrimStart();
+    broadcastVideoTime();
+    if (isPlaying) playVideo();
+  }
+}
+
+function setActiveVideoPlaying(isPlaying) {
+  if (!activeEngine) return false;
+  if (isPlaying) activeEngine.play();
+  else activeEngine.pause();
+  return true;
+}
+
+function seekActiveVideo(time) {
+  if (!activeEngine) return false;
+  activeEngine.seek(time);
+  return true;
+}
+
+function restartActiveVideo() {
+  if (!activeEngine) return false;
+  activeEngine.restart();
+  return true;
+}
+
+function resetActiveVideoZoom() {
+  if (!activeEngine) return false;
+  activeEngine.resetZoom();
+  return true;
+}
+
+function setActiveVideoPlaybackRate(playbackRate) {
+  if (!activeEngine) return false;
+  activeEngine.setPlaybackRate(playbackRate);
+  return true;
+}
+
+function resetVideoForScene() {
+  if (!activeEngine) return;
+  activeEngine.cleanup();
+  activeEngine = null;
+}
+
+function normalizeTrim(trim = {}) {
+  return {
+    start: Number.isFinite(trim.start) ? trim.start : 0,
+    end: Number.isFinite(trim.end) ? trim.end : Infinity
+  };
+}
+
+function clampTime(time, trim) {
+  const numericTime = Number(time);
+  if (!Number.isFinite(numericTime)) return trim.start;
+  return Math.max(trim.start, Math.min(trim.end, numericTime));
+}
+
+function getSafePositiveNumber(value, fallback) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : fallback;
+}
+
+function getSafeNonNegativeNumber(value, fallback) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : fallback;
+}
+
+function clampPercent(value, fallback) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return fallback;
+  return Math.max(0, Math.min(100, numericValue));
+}
+
+exports.mountVideoTimeline = mountVideoTimeline;
+exports.setActiveVideoPlaying = setActiveVideoPlaying;
+exports.seekActiveVideo = seekActiveVideo;
+exports.restartActiveVideo = restartActiveVideo;
+exports.resetActiveVideoZoom = resetActiveVideoZoom;
+exports.setActiveVideoPlaybackRate = setActiveVideoPlaybackRate;
+exports.resetVideoForScene = resetVideoForScene;
+};
+
+__require("src/app.js");
+})();
+</script>
+</body>
+</html>

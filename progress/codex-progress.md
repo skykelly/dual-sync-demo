@@ -4,7 +4,8 @@ Use this file to track phase execution.
 
 ## Current Status
 
-- Step 10 complete: test checklist validation notes are recorded, and the project remains runnable as local static HTML.
+- Step 10 complete: test checklist validation notes are recorded.
+- Added a presentation bundle path: `node scripts/build-single-html.mjs` generates `dist/index.html` so the app can be opened directly from `file://` while keeping the source modules intact.
 
 ## Completed Tasks
 
@@ -514,3 +515,57 @@ DONE: 10_test_checklist.md
 DONE: 10_test_checklist.md
 - Completed at: 2026년  6월  1일 월요일 00시 23분 55초 KST
 
+### Presentation Bundle Update
+
+Completed on 2026-06-01.
+
+What changed:
+- Added `scripts/build-single-html.mjs`.
+- The build script keeps the development source split across `src/`, `data/`, and `styles/`.
+- The build script generates `dist/index.html` with CSS, JavaScript, and scene data inlined.
+- Referenced `assets/...` files are copied into `dist/assets/...` when they exist.
+- Updated `README.md` with separate presentation and development execution paths.
+
+Changed files:
+- `scripts/build-single-html.mjs`
+- `README.md`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for all files in `src/*.js`, `data/*.js`, and `scripts/build-single-html.mjs`.
+- Ran `node scripts/build-single-html.mjs`.
+- Confirmed `dist/index.html?view=controller`, `dist/index.html?view=demo`, and `dist/index.html?view=explain` render through `file://` in headless Chrome.
+
+Manual test notes:
+- Open `dist/index.html?view=controller`, `dist/index.html?view=demo`, and `dist/index.html?view=explain` in separate browser windows.
+- Confirm BroadcastChannel sync works between the bundled file windows.
+- Add the real scene video file at the path referenced by `data/scenes.js`, rebuild, and verify video timeline, hotspot, and zoom behavior.
+
+### Authoring Workflow Update
+
+Completed on 2026-06-01.
+
+What changed:
+- Added `data/videos.js` as the static video manifest for Authoring View.
+- Extended Authoring View with video selection, scene title/description inputs, trim start/end controls, explain step creation, default explain step selection, time event creation, hotspot creation, zoom event creation, and reset zoom event creation.
+- Time events and hotspots now choose explain steps from a dropdown instead of requiring manual step ID typing.
+- Generated JSON now outputs a complete scene entry intended for paste-in use inside `data/scenes.js`.
+- Updated the single HTML build script to copy referenced `assets/...` files from all bundled modules, including `data/videos.js`.
+- Updated README with the recommended scene editing workflow.
+
+Changed files:
+- `data/videos.js`
+- `src/authorView.js`
+- `styles/styles.css`
+- `scripts/build-single-html.mjs`
+- `README.md`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for `data/*.js`, `src/*.js`, and `scripts/build-single-html.mjs`.
+- Ran `node scripts/build-single-html.mjs`.
+
+Manual test notes:
+- Open `index.html?view=author`.
+- Select a video from the manifest and confirm it loads.
+- Use `Set Start` and `Set End`, add explain steps, add events/hotspots/zoom events, then confirm the generated scene entry is suitable for `data/scenes.js`.
