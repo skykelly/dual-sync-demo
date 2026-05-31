@@ -1,4 +1,5 @@
 const STORAGE_KEY = "dual-presentation-step";
+const DEBUG_HOTSPOTS_STORAGE_KEY = "dual-presentation-debug-hotspots";
 
 export function createPresentationState(scenes) {
   const initialStep = Number(localStorage.getItem(STORAGE_KEY) || 0);
@@ -6,6 +7,7 @@ export function createPresentationState(scenes) {
   const state = {
     currentStep: clampStep(initialStep, scenes),
     currentExplainStepId: getDefaultExplainStepId(scenes[clampStep(initialStep, scenes)]),
+    debugHotspots: localStorage.getItem(DEBUG_HOTSPOTS_STORAGE_KEY) === "true",
     isPlaying: false,
     timer: null,
     remainingSec: getSceneDurationSec(scenes[clampStep(initialStep, scenes)]),
@@ -51,6 +53,11 @@ export function createPresentationState(scenes) {
     };
   }
 
+  function setDebugHotspots(debugHotspots) {
+    state.debugHotspots = Boolean(debugHotspots);
+    localStorage.setItem(DEBUG_HOTSPOTS_STORAGE_KEY, String(state.debugHotspots));
+  }
+
   function resetRemainingSec() {
     state.remainingSec = getSceneDurationSec(scenes[state.currentStep]);
   }
@@ -71,6 +78,7 @@ export function createPresentationState(scenes) {
     setRemainingSec,
     setExplainStep,
     setVideoStatus,
+    setDebugHotspots,
     resetRemainingSec,
     clearTimer,
     setTimer

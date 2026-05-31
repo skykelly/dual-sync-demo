@@ -3,7 +3,8 @@ import { renderShell } from "./viewShell.js";
 export function renderDemoView({ scene, scenes, state }) {
   const demo = scene.demo;
   const trim = demo.trim || { start: 0, end: 0 };
-  const showDebug = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1";
+  const queryDebug = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1";
+  const debugHotspots = state.debugHotspots || queryDebug;
 
   return renderShell({
     label: "Demo View",
@@ -16,7 +17,7 @@ export function renderDemoView({ scene, scenes, state }) {
           <h1>${scene.title}</h1>
           <p class="subtitle">${scene.description}</p>
         </div>
-        <div class="video-frame" data-video="missing">
+        <div class="video-frame ${debugHotspots ? "debug-hotspots" : ""}" data-video="missing" data-debug-hotspots="${debugHotspots ? "true" : "false"}">
           <video
             class="demo-video"
             data-demo-video
@@ -32,7 +33,9 @@ export function renderDemoView({ scene, scenes, state }) {
             <strong>Demo video placeholder</strong>
             <span>${demo.videoSrc} 파일이 없어도 발표 화면은 계속 표시됩니다.</span>
           </div>
-          ${showDebug ? renderHotspotGuides(demo.interactions) : ""}
+          <div class="hotspot-layer" aria-label="Demo interaction hotspots">
+            ${renderHotspots(demo.interactions)}
+          </div>
         </div>
         <div class="timeline-summary">
           <span>Trim ${formatSeconds(trim.start)}-${formatSeconds(trim.end)}</span>
@@ -46,16 +49,19 @@ export function renderDemoView({ scene, scenes, state }) {
   });
 }
 
-function renderHotspotGuides(interactions) {
-  return interactions.map((interaction) => `
+function renderHotspots(interactions = []) {
+  return interactions.filter((interaction) => interaction.type === "hotspot").map((interaction) => `
     <button
       type="button"
-      class="hotspot-guide"
+      class="demo-hotspot"
+      data-hotspot-id="${interaction.id}"
+      data-time-start="${interaction.timeRange?.start ?? 0}"
+      data-time-end="${interaction.timeRange?.end ?? Number.POSITIVE_INFINITY}"
       style="left:${interaction.x}%;top:${interaction.y}%;width:${interaction.width}%;height:${interaction.height}%;"
       aria-label="${interaction.label}"
       title="${interaction.label}"
     >
-      ${interaction.showLabel ? `<span>${interaction.label}</span>` : ""}
+      ${interaction.showLabel ? `<span class="hotspot-label">${interaction.label}</span>` : ""}
     </button>
   `).join("");
 }

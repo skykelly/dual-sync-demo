@@ -42,8 +42,12 @@ body[data-view="demo"] .subtitle { color: #c7cbd4; }
 .video-fallback { position: relative; z-index: 1; display: grid; gap: 12px; justify-items: center; padding: 28px; text-align: center; color: #e5e7eb; }
 .video-fallback strong { font-size: clamp(26px, 3vw, 44px); }
 .video-fallback span { color: #aeb4c1; font-size: 18px; }
-.hotspot-guide { position: absolute; z-index: 2; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,.82); background: rgba(165,0,52,.18); padding: 0; border-radius: 4px; color: white; display: grid; place-items: start center; pointer-events: none; }
-.hotspot-guide span { transform: translateY(-100%); background: rgba(165,0,52,.94); padding: 6px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+.hotspot-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.demo-hotspot { position: absolute; transform: translate(-50%, -50%); border: 0; background: transparent; padding: 0; border-radius: 4px; color: white; display: grid; place-items: start center; pointer-events: auto; min-width: 20px; min-height: 20px; }
+.demo-hotspot:focus-visible { outline: 3px solid rgba(255,255,255,.92); outline-offset: 3px; }
+.hotspot-label { transform: translateY(-100%); background: rgba(15,17,23,.78); border: 1px solid rgba(255,255,255,.18); padding: 6px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; pointer-events: none; }
+.debug-hotspots .demo-hotspot { border: 2px solid rgba(255,255,255,.86); background: rgba(165,0,52,.2); }
+.debug-hotspots .hotspot-label { background: rgba(165,0,52,.94); border-color: rgba(255,255,255,.44); }
 .timeline-summary { display: flex; gap: 10px; flex-wrap: wrap; color: #d5d8df; }
 .timeline-summary span { border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.07); padding: 8px 10px; border-radius: 6px; font-size: 13px; }
 
@@ -93,6 +97,7 @@ body[data-view="demo"] .subtitle { color: #c7cbd4; }
 .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
 button, .open-links a { appearance: none; border: 1px solid var(--line); background: white; border-radius: 16px; padding: 14px 18px; font-weight: 800; cursor: pointer; text-decoration: none; color: var(--ink); font-size: 16px; }
 button.primary { background: var(--red); color: white; border-color: var(--red); }
+button.active-toggle { border-color: var(--red); background: var(--red-soft); color: var(--red); }
 .video-status { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; color: #4b5563; }
 .video-status span { border: 1px solid var(--line); background: var(--soft); padding: 8px 10px; border-radius: 6px; font-size: 13px; }
 .explain-control { margin-top: 28px; }

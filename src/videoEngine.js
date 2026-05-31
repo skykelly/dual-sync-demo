@@ -19,6 +19,7 @@ export function mountVideoTimeline({
   const demo = scene.demo;
   const trim = normalizeTrim(demo.trim);
   const executedEventIds = new Set();
+  const hotspotElements = Array.from(document.querySelectorAll("[data-hotspot-id]"));
   const listeners = [];
   let timeUpdateTimer = null;
   let didInitialSeek = false;
@@ -63,6 +64,8 @@ export function mountVideoTimeline({
   function handleTimeUpdate() {
     const currentTime = video.currentTime || 0;
 
+    updateHotspots(currentTime);
+
     for (const timeEvent of demo.timeEvents || []) {
       if (!timeEvent?.id || executedEventIds.has(timeEvent.id)) continue;
       if (currentTime < timeEvent.time) continue;
@@ -79,6 +82,53 @@ export function mountVideoTimeline({
     }
 
     broadcastVideoTime();
+  }
+
+  function updateHotspots(currentTime = video.currentTime || 0) {
+    const hotspotMap = new Map((demo.interactions || []).map((interaction) => [interaction.id, interaction]));
+
+    for (const element of hotspotElements) {
+      const interaction = hotspotMap.get(element.dataset.hotspotId);
+      const timeRange = interaction?.timeRange || {};
+      const start = Number.isFinite(timeRange.start) ? timeRange.start : trim.start;
+      const end = Number.isFinite(timeRange.end) ? timeRange.end : trim.end;
+      const isActive = currentTime >= start && currentTime <= end;
+
+      element.hidden = !isActive;
+      element.disabled = !isActive;
+      element.setAttribute("aria-hidden", String(!isActive));
+    }
+  }
+
+  function handleHotspotClick(event) {
+    const hotspot = event.target.closest("[data-hotspot-id]");
+    if (!hotspot) return;
+
+    const interaction = (demo.interactions || []).find((item) => item.id === hotspot.dataset.hotspotId);
+    if (!interaction?.action || hotspot.hidden || hotspot.disabled) return;
+
+    event.preventDefault();
+    runHotspotAction(interaction.action);
+  }
+
+  function runHotspotAction(action) {
+    if (action.type === "syncExplain" && action.explainStepId) {
+      onSyncExplain(action.explainStepId);
+    }
+
+    if (action.type === "pause") {
+      pauseVideo();
+      onPause();
+    }
+
+    if (action.type === "jumpToTime") {
+      activeEngine?.seek(action.time);
+    }
+
+    if (action.type === "nextScene") {
+      pauseVideo();
+      onNextScene();
+    }
   }
 
   function runTimeEvent(timeEvent) {
@@ -99,6 +149,7 @@ export function mountVideoTimeline({
 
   addListener(video, "loadedmetadata", () => {
     seekToTrimStart();
+    updateHotspots();
     broadcastVideoTime();
     if (isPlaying) playVideo();
   });
@@ -124,6 +175,11 @@ export function mountVideoTimeline({
   });
 
   timeUpdateTimer = window.setInterval(broadcastVideoTime, 500);
+  updateHotspots(trim.start);
+
+  for (const hotspotElement of hotspotElements) {
+    addListener(hotspotElement, "click", handleHotspotClick);
+  }
 
   activeEngine = {
     play: playVideo,
@@ -132,6 +188,7 @@ export function mountVideoTimeline({
       const safeTime = clampTime(time, trim);
       didInitialSeek = true;
       video.currentTime = safeTime;
+      updateHotspots(safeTime);
       broadcastVideoTime();
     },
     cleanup() {

@@ -66,6 +66,15 @@ function handleSyncMessage(data) {
   if (data.type === "JUMP_TO_TIME" && view === "demo") {
     seekActiveVideo(data.time);
   }
+
+  if (data.type === "SET_DEBUG_HOTSPOTS") {
+    presentation.setDebugHotspots(data.debugHotspots);
+    if (view === "demo") {
+      updateDemoHotspotDebugOnly();
+    } else {
+      render();
+    }
+  }
 }
 
 function setStep(step, shouldBroadcast = true) {
@@ -151,6 +160,14 @@ function renderPlaybackStatusOnly() {
   if (status) status.textContent = state.isPlaying ? "PLAY" : "PAUSE";
 }
 
+function updateDemoHotspotDebugOnly() {
+  const frame = document.querySelector(".video-frame");
+  if (!frame || view !== "demo") return;
+
+  frame.classList.toggle("debug-hotspots", state.debugHotspots);
+  frame.dataset.debugHotspots = state.debugHotspots ? "true" : "false";
+}
+
 function syncExplain(explainStepId, shouldBroadcast = true) {
   presentation.setExplainStep(explainStepId);
   if (view !== "demo") {
@@ -212,6 +229,11 @@ app.addEventListener("click", (event) => {
   if (action === "reset") resetTimer();
   if (action === "set-step") setStep(Number(control.dataset.step));
   if (action === "sync-explain") syncExplain(control.dataset.explainStepId);
+  if (action === "toggle-debug-hotspots") {
+    presentation.setDebugHotspots(!state.debugHotspots);
+    sync.broadcast("SET_DEBUG_HOTSPOTS", { debugHotspots: state.debugHotspots });
+    render();
+  }
 });
 
 window.addEventListener("keydown", (event) => {

@@ -4,7 +4,7 @@ Use this file to track phase execution.
 
 ## Current Status
 
-- Step 4 complete: Explain View now renders scene explain steps, supports synced explain step changes, and falls back to each scene default step.
+- Step 5 complete: Demo View now renders time-ranged interaction hotspots, supports hotspot actions, and includes a Controller debug toggle.
 
 ## Completed Tasks
 
@@ -213,3 +213,49 @@ DONE: 04_explain_step_sync.md
 DONE: 04_explain_step_sync.md
 - Completed at: 2026년  6월  1일 월요일 00시 01분 36초 KST
 
+### Step 5. Hotspot Interaction
+
+Completed on 2026-06-01.
+
+What changed:
+- Demo View now renders hotspot buttons from `scene.demo.interactions`.
+- Hotspot positions and sizes use percentage-based `x`, `y`, `width`, and `height` values relative to the video frame.
+- Video Timeline Engine now shows each hotspot only within its `timeRange.start` through `timeRange.end` window.
+- Hotspot clicks now support `syncExplain`, `pause`, `jumpToTime`, and `nextScene` actions.
+- `syncExplain` hotspot actions broadcast the selected explain step through the existing `SYNC_EXPLAIN` flow.
+- Controller View now includes a Hotspots Debug toggle that broadcasts `SET_DEBUG_HOTSPOTS` to Demo View.
+- Demo View can switch hotspot debug styling without remounting the active video timeline.
+
+Changed files:
+- `src/app.js`
+- `src/controllerView.js`
+- `src/demoView.js`
+- `src/state.js`
+- `src/videoEngine.js`
+- `styles/styles.css`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for all files in `src/*.js` and `data/*.js`.
+- Rendered Controller, Demo, and Explain view HTML through Node with a stubbed `localStorage`.
+- Confirmed Demo rendering includes hotspot elements, Controller rendering includes the debug toggle, and debug mode adds `data-debug-hotspots="true"`.
+- Started a local static server with `python3 -m http.server 4173`.
+- Confirmed these static routes return `index.html` successfully:
+  - `http://127.0.0.1:4173/index.html?view=controller`
+  - `http://127.0.0.1:4173/index.html?view=demo`
+  - `http://127.0.0.1:4173/index.html?view=explain`
+
+Manual test notes:
+- Open `index.html?view=controller`, `index.html?view=demo`, and `index.html?view=explain` in separate browser windows.
+- In Controller, click `Hotspots Debug On` and confirm Demo View shows hotspot borders and labels clearly.
+- Click the same toggle again and confirm Demo View hides hotspot borders while keeping the app usable.
+- With a valid `assets/videos/demo.mp4`, play Demo View and confirm hotspots appear only during their configured time ranges.
+- Click the scene 1 input hotspot while visible and confirm Explain View changes to `explain-input`.
+- Add or temporarily modify a hotspot action to `pause`, `jumpToTime`, or `nextScene` and confirm each action runs without breaking manual Controller controls.
+- Confirm `Next`, `Prev`, `Play`, `Pause`, direct Explain Step selection, and all three required routes still work.
+
+Notes:
+- The in-app Browser connector was attempted for browser-level verification, but it reported `Browser is not available: iab`. Static route checks and Node render checks were used instead.
+
+DONE: 05_hotspot_interactions.md
+- Completed at: 2026-06-01 00:04:20 KST

@@ -21,6 +21,12 @@ export function renderControllerView({ scene, scenes, state }) {
             <button type="button" class="primary" data-action="next">Next →</button>
             <button type="button" data-action="play-toggle">${state.isPlaying ? "Pause" : "Play"}</button>
             <button type="button" data-action="reset">Reset Timer</button>
+            <button
+              type="button"
+              class="${state.debugHotspots ? "active-toggle" : ""}"
+              data-action="toggle-debug-hotspots"
+              aria-pressed="${state.debugHotspots ? "true" : "false"}"
+            >Hotspots ${state.debugHotspots ? "Debug On" : "Debug Off"}</button>
           </div>
           <div class="video-status" aria-label="Demo video status">
             <span>Video ${formatSeconds(videoStatus.currentTime || scene.demo.trim.start)} / ${formatSeconds(videoStatus.duration || scene.demo.trim.end)}</span>
