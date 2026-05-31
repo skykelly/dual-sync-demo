@@ -233,8 +233,20 @@ export function mountVideoTimeline({
     seek(time) {
       const safeTime = clampTime(time, trim);
       didInitialSeek = true;
+      hasReachedTrimEnd = false;
       video.currentTime = safeTime;
       updateHotspots(safeTime);
+      broadcastVideoTime();
+    },
+    restart() {
+      executedEventIds.clear();
+      executedZoomEventIds.clear();
+      hasReachedTrimEnd = false;
+      didInitialSeek = true;
+      resetZoom(0);
+      video.currentTime = trim.start;
+      pauseVideo();
+      updateHotspots(trim.start);
       broadcastVideoTime();
     },
     resetZoom,
@@ -263,6 +275,12 @@ export function setActiveVideoPlaying(isPlaying) {
 export function seekActiveVideo(time) {
   if (!activeEngine) return false;
   activeEngine.seek(time);
+  return true;
+}
+
+export function restartActiveVideo() {
+  if (!activeEngine) return false;
+  activeEngine.restart();
   return true;
 }
 

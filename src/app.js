@@ -6,6 +6,7 @@ import { createPresentationState } from "./state.js";
 import { createSyncChannel } from "./sync.js";
 import {
   mountVideoTimeline,
+  restartActiveVideo,
   resetActiveVideoZoom,
   resetVideoForScene,
   seekActiveVideo,
@@ -57,6 +58,18 @@ function handleSyncMessage(data) {
     render();
   }
 
+  if (data.type === "RESTART_SCENE") {
+    presentation.setStep(data.sceneIndex ?? state.currentStep);
+    presentation.setPlaying(false);
+    presentation.clearTimer();
+    if (view === "demo") {
+      restartActiveVideo();
+      renderPlaybackStatusOnly();
+    } else {
+      render();
+    }
+  }
+
   if (data.type === "SYNC_EXPLAIN") {
     if (Number.isFinite(data.sceneIndex) && data.sceneIndex !== state.currentStep) {
       presentation.setStep(data.sceneIndex);
@@ -89,6 +102,15 @@ function handleSyncMessage(data) {
 
   if (data.type === "SET_DEBUG_HOTSPOTS") {
     presentation.setDebugHotspots(data.debugHotspots);
+    if (view === "demo") {
+      updateDemoHotspotDebugOnly();
+    } else {
+      render();
+    }
+  }
+
+  if (data.type === "SET_HOTSPOT_DEBUG") {
+    presentation.setDebugHotspots(data.enabled);
     if (view === "demo") {
       updateDemoHotspotDebugOnly();
     } else {
@@ -157,6 +179,14 @@ function resetTimer() {
   render();
 }
 
+function restartScene() {
+  presentation.setPlaying(false);
+  presentation.clearTimer();
+  presentation.setStep(state.currentStep);
+  sync.broadcast("RESTART_SCENE", { sceneIndex: state.currentStep });
+  render();
+}
+
 function resetZoom() {
   sync.broadcast("RESET_ZOOM", { sceneIndex: state.currentStep });
 }
@@ -170,6 +200,34 @@ function setPlaybackRate(playbackRate) {
   render();
 }
 
+function jumpToSceneTime(sceneTime) {
+  const scene = scenes[state.currentStep];
+  const trimStart = scene?.demo?.trim?.start || 0;
+  const trimEnd = scene?.demo?.trim?.end || trimStart;
+  const numericSceneTime = Number(sceneTime);
+  if (!Number.isFinite(numericSceneTime)) return;
+
+  const targetTime = Math.max(trimStart, Math.min(trimEnd, trimStart + Math.max(0, numericSceneTime)));
+  sync.broadcast("JUMP_TO_TIME", {
+    sceneIndex: state.currentStep,
+    time: targetTime
+  });
+  presentation.setVideoStatus({
+    sceneIndex: state.currentStep,
+    currentTime: targetTime,
+    isPlaying: state.isPlaying
+  });
+  renderControllerVideoStatusOnly();
+}
+
+function formatVideoClock(seconds, fallback = 0) {
+  const numericSeconds = Number.isFinite(Number(seconds)) ? Number(seconds) : fallback;
+  const safeSeconds = Math.max(0, numericSeconds);
+  const minutes = Math.floor(safeSeconds / 60).toString().padStart(2, "0");
+  const remainingSeconds = (safeSeconds % 60).toFixed(2).padStart(5, "0");
+  return `${minutes}:${remainingSeconds}`;
+}
+
 function renderTimerOnly() {
   const timer = document.querySelector("[data-timer]");
   if (timer) timer.textContent = formatTime(state.remainingSec);
@@ -179,13 +237,17 @@ function renderControllerVideoStatusOnly() {
   const videoStatus = document.querySelector(".video-status");
   if (!videoStatus || view !== "controller") return;
 
-  const currentTime = Number(state.videoStatus?.currentTime || 0).toFixed(1).replace(".0", "");
-  const duration = Number(state.videoStatus?.duration || 0).toFixed(1).replace(".0", "");
+  const scene = scenes[state.currentStep];
+  const trim = scene.demo?.trim || { start: 0, end: 0 };
+  const currentTime = state.videoStatus?.currentTime ?? trim.start;
+  const sceneElapsed = Math.max(0, Number(currentTime || trim.start) - Number(trim.start || 0));
+  const sceneDuration = Math.max(0, Number(trim.end || 0) - Number(trim.start || 0));
+  const currentExplainStep = getExplainStep(scene, state.currentExplainStepId);
+
   videoStatus.innerHTML = `
-    <span>Video ${currentTime}s / ${duration}s</span>
-    <span>${state.videoStatus?.isPlaying ? "Playing" : "Paused"}</span>
-    <span>Speed ${formatPlaybackRate(state.playbackRate)}x</span>
-    <span>Explain ${state.currentExplainStepId || "none"}</span>
+    <span>현재 영상 시간 ${formatVideoClock(currentTime, trim.start)} / ${formatVideoClock(trim.end, 0)}</span>
+    <span>Scene Time ${formatVideoClock(sceneElapsed, 0)} / ${formatVideoClock(sceneDuration, 0)}</span>
+    <span>현재 Explain ${currentExplainStep.title || "none"}</span>
   `;
 }
 
@@ -262,15 +324,24 @@ app.addEventListener("click", (event) => {
   if (action === "next") nextStep();
   if (action === "play-toggle") state.isPlaying ? pauseTimer() : startTimer();
   if (action === "reset") resetTimer();
+  if (action === "restart-scene") restartScene();
   if (action === "reset-zoom") resetZoom();
   if (action === "set-step") setStep(Number(control.dataset.step));
   if (action === "sync-explain") syncExplain(control.dataset.explainStepId);
   if (action === "set-playback-rate") setPlaybackRate(Number(control.dataset.playbackRate));
   if (action === "toggle-debug-hotspots") {
     presentation.setDebugHotspots(!state.debugHotspots);
-    sync.broadcast("SET_DEBUG_HOTSPOTS", { debugHotspots: state.debugHotspots });
+    sync.broadcast("SET_HOTSPOT_DEBUG", { enabled: state.debugHotspots });
     render();
   }
+});
+
+app.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-jump-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  jumpToSceneTime(form.querySelector("[data-jump-time]")?.value);
 });
 
 window.addEventListener("keydown", (event) => {
@@ -284,4 +355,12 @@ render();
 
 function formatPlaybackRate(rate) {
   return Number(rate || 1).toFixed(2).replace(/\.?0+$/, "");
+}
+
+function getExplainStep(scene, explainStepId) {
+  const steps = scene.explain?.steps || [];
+  return steps.find((step) => step.id === explainStepId)
+    || steps.find((step) => step.id === scene.explain?.defaultStepId)
+    || steps[0]
+    || {};
 }

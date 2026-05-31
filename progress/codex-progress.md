@@ -4,7 +4,7 @@ Use this file to track phase execution.
 
 ## Current Status
 
-- Step 6 complete: Demo View now supports zoom events/reset zoom, and Controller can set playback speed.
+- Step 7 complete: Controller View now works as a presenter console with scene navigation, restart, jump-to-time, speed, hotspot debug, explain step forcing, script notes, and synced video time.
 
 ## Completed Tasks
 
@@ -316,3 +316,48 @@ DONE: 05_hotspot_interactions.md
 DONE: 06_zoom_and_speed.md
 - Completed at: 2026년  6월  1일 월요일 00시 08분 43초 KST
 
+### Step 7. Controller Console
+
+Completed on 2026-06-01.
+
+What changed:
+- Reworked Controller View into a presenter console with a clear current scene header, play/pause state, current video time, scene-relative time, and active explain step.
+- Added a scene list that highlights the current scene and lets the presenter jump directly to any scene.
+- Added large transport controls for Prev, Play/Pause, Next, Restart Scene, Reset Zoom, and Hotspot Debug On/Off.
+- Added Jump to Time control using scene-relative seconds, broadcast to Demo View as `JUMP_TO_TIME`.
+- Added Restart Scene behavior that pauses, seeks Demo View back to the scene trim start, resets zoom, clears fired timeline/zoom events, and restores the scene default explain step.
+- Kept playback speed buttons and direct Explain Step controls visible in the console.
+- Moved speaker script notes beside the scene list for fast presenter reference.
+- Added `SET_HOTSPOT_DEBUG` message handling while preserving the previous debug message handler for compatibility.
+
+Changed files:
+- `src/controllerView.js`
+- `src/app.js`
+- `src/videoEngine.js`
+- `styles/styles.css`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for all files in `src/*.js` and `data/*.js`.
+- Rendered Controller, Demo, and Explain view HTML through Node with a stubbed `localStorage`.
+- Confirmed Controller rendering includes Restart Scene, Jump to Time, scene list, direct Explain Step controls, and formatted current video time.
+- Started a local static server with `python3 -m http.server 4173`.
+- Confirmed these static routes return `index.html` successfully:
+  - `http://127.0.0.1:4173/index.html?view=controller`
+  - `http://127.0.0.1:4173/index.html?view=demo`
+  - `http://127.0.0.1:4173/index.html?view=explain`
+
+Manual test notes:
+- Open `index.html?view=controller`, `index.html?view=demo`, and `index.html?view=explain` in separate browser windows.
+- In Controller, click scene list items and confirm Demo View and Explain View move to the selected scene.
+- Click Play/Pause, Prev, Next, Restart Scene, Reset Zoom, and Hotspot Debug On/Off and confirm Demo View responds.
+- Enter a scene-relative time in Jump to Time and confirm Demo View seeks within the active scene trim range.
+- Click each playback speed button and confirm Demo View video speed changes.
+- Click each Explain Step button and confirm Explain View changes to the selected step while Controller updates the speaker script.
+- With a valid `assets/videos/demo.mp4`, confirm current video time updates in Controller while Demo View plays.
+
+Notes:
+- Node render checks emit a package metadata warning because this static project has no local `package.json` with `"type": "module"`; the checks still passed.
+
+DONE: 07_controller_console.md
+- Completed at: 2026-06-01 00:11:53 KST
