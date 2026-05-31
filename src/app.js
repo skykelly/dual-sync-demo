@@ -1,4 +1,5 @@
 import { scenes } from "../data/scenes.js";
+import { mountAuthorView, renderAuthorView } from "./authorView.js";
 import { renderControllerView } from "./controllerView.js";
 import { renderDemoView } from "./demoView.js";
 import { renderExplainView } from "./explainView.js";
@@ -307,6 +308,10 @@ function render() {
       onPlaybackStateChange: handleVideoPlaybackStateChange,
       playbackRate: state.playbackRate
     });
+  } else if (view === "author") {
+    resetVideoForScene();
+    app.innerHTML = renderAuthorView({ scenes, state });
+    mountAuthorView();
   } else if (view === "explain") {
     app.innerHTML = renderExplainView({ scene, scenes, state });
   } else {
@@ -345,6 +350,8 @@ app.addEventListener("submit", (event) => {
 });
 
 window.addEventListener("keydown", (event) => {
+  if (view === "author") return;
+
   if (["ArrowRight", "Space", "PageDown"].includes(event.code)) nextStep();
   if (["ArrowLeft", "PageUp"].includes(event.code)) prevStep();
   if (event.code === "KeyP") state.isPlaying ? pauseTimer() : startTimer();

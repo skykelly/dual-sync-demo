@@ -4,7 +4,7 @@ Use this file to track phase execution.
 
 ## Current Status
 
-- Step 8 complete: Sample AI Shopping Agent demo scenario now includes five scenes with time events, explain steps, hotspots, and Scene 3 zoom events.
+- Step 9 complete: Authoring Mode MVP is available at `index.html?view=author` for generating scene JSON with hotspots, time events, and zoom events.
 
 ## Completed Tasks
 
@@ -419,3 +419,55 @@ DONE: 08_sample_demo_scenario.md
 DONE: 08_sample_demo_scenario.md
 - Completed at: 2026년  6월  1일 월요일 00시 15분 51초 KST
 
+### Step 9. Authoring Mode MVP
+
+Completed on 2026-06-01.
+
+What changed:
+- Added `index.html?view=author` routing.
+- Added `src/authorView.js` with a static Authoring View MVP.
+- Authoring View supports video path input and loading.
+- Authoring View supports video play/pause and current time display.
+- `Add Hotspot` arms placement mode; clicking the video container stores percentage-based `x`/`y` coordinates.
+- Hotspot `width`, `height`, `label`, and `explainStepId` inputs generate hotspot JSON in the existing scene data shape.
+- `Add Time Event` creates current-time `pause` or `syncExplain` events.
+- `Add Zoom Event` creates current-time zoom events with `scale`, `x`, `y`, and `duration`.
+- Added a generated Scene JSON preview and `Copy JSON` button.
+- Added Authoring View styles while preserving Controller, Demo, and Explain layouts.
+
+Changed files:
+- `src/app.js`
+- `src/authorView.js`
+- `styles/styles.css`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for all files in `src/*.js` and `data/*.js`.
+- Rendered Controller, Demo, Explain, and Author view HTML through Node using a stubbed `localStorage`.
+- Confirmed Author rendering includes the video frame, hotspot controls, time event controls, zoom event controls, JSON preview, and Copy JSON button.
+- Started a local static server with `python3 -m http.server 4173`.
+- Confirmed these static routes return `200 OK`:
+  - `http://127.0.0.1:4173/index.html?view=controller`
+  - `http://127.0.0.1:4173/index.html?view=demo`
+  - `http://127.0.0.1:4173/index.html?view=explain`
+  - `http://127.0.0.1:4173/index.html?view=author`
+
+Manual test notes:
+- Open `index.html?view=author`.
+- Enter a video path such as `assets/videos/demo.mp4` and click `Load`.
+- Play and pause the video; confirm `Current Time` updates.
+- Click `Add Hotspot`, then click the video container; confirm a hotspot overlay appears and JSON preview includes percentage `x`/`y`, `width`, `height`, `label`, and `explainStepId`.
+- Click another point on the video container and confirm the click X/Y readout and zoom origin inputs update.
+- Click `Add Time Event` with `syncExplain` and confirm the current-time event appears in JSON.
+- Change the time event type to `pause`, click `Add Time Event`, and confirm no `explainStepId` is added for that pause event.
+- Click `Add Zoom Event` and confirm the current-time zoom event includes `scale`, `x`, `y`, and `duration`.
+- Click `Copy JSON` and confirm the generated JSON is copied to the clipboard.
+- Open `index.html?view=controller`, `index.html?view=demo`, and `index.html?view=explain` to confirm the existing views still load.
+
+Notes:
+- The in-app Browser connector was attempted for browser-level verification, but it reported `Browser is not available: iab`. Static route checks and Node render checks were used instead.
+- Node module render checks still emit the existing package metadata warning because this static project has no local `package.json` with `"type": "module"`; the checks passed.
+- No production dependencies were added.
+
+DONE: 09_authoring_mode_mvp.md
+- Completed at: 2026-06-01 00:24:00 KST
