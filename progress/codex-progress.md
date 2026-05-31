@@ -471,3 +471,7 @@ Notes:
 
 DONE: 09_authoring_mode_mvp.md
 - Completed at: 2026-06-01 00:24:00 KST
+
+DONE: 09_authoring_mode_mvp.md
+- Completed at: 2026년  6월  1일 월요일 00시 21분 07초 KST
+
