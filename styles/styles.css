@@ -36,8 +36,9 @@ body[data-view="demo"] .subtitle { color: #c7cbd4; }
 .demo-stage { flex: 1; display: grid; grid-template-rows: auto minmax(320px, 1fr) auto; gap: 24px; padding: 34px; }
 .demo-copy h1 { font-size: clamp(36px, 4vw, 64px); }
 .video-frame { position: relative; min-height: 360px; border: 1px solid rgba(255,255,255,.16); background: #181b24; overflow: hidden; display: grid; place-items: center; }
+.video-layer { position: absolute; inset: 0; transform: scale(1); transform-origin: 50% 50%; transition-property: transform; transition-timing-function: ease; transition-duration: .5s; }
 .demo-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #05060a; }
-.video-frame[data-video="missing"] .demo-video { opacity: 0; pointer-events: none; }
+.video-frame[data-video="missing"] .video-layer { opacity: 0; pointer-events: none; }
 .video-frame[data-video="ready"] .video-fallback { display: none; }
 .video-fallback { position: relative; z-index: 1; display: grid; gap: 12px; justify-items: center; padding: 28px; text-align: center; color: #e5e7eb; }
 .video-fallback strong { font-size: clamp(26px, 3vw, 44px); }
@@ -100,6 +101,11 @@ button.primary { background: var(--red); color: white; border-color: var(--red);
 button.active-toggle { border-color: var(--red); background: var(--red-soft); color: var(--red); }
 .video-status { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; color: #4b5563; }
 .video-status span { border: 1px solid var(--line); background: var(--soft); padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+.speed-control { margin-top: 24px; }
+.speed-control h2 { margin: 0 0 12px; font-size: 18px; color: var(--red); }
+.speed-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.speed-button { border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+.speed-button.active { border-color: var(--red); background: var(--red-soft); color: var(--red); }
 .explain-control { margin-top: 28px; }
 .explain-control h2 { margin: 0 0 12px; font-size: 18px; color: var(--red); }
 .explain-step-buttons { display: grid; gap: 10px; }

@@ -4,7 +4,14 @@ import { renderDemoView } from "./demoView.js";
 import { renderExplainView } from "./explainView.js";
 import { createPresentationState } from "./state.js";
 import { createSyncChannel } from "./sync.js";
-import { mountVideoTimeline, resetVideoForScene, seekActiveVideo, setActiveVideoPlaying } from "./videoEngine.js";
+import {
+  mountVideoTimeline,
+  resetActiveVideoZoom,
+  resetVideoForScene,
+  seekActiveVideo,
+  setActiveVideoPlaybackRate,
+  setActiveVideoPlaying
+} from "./videoEngine.js";
 import { formatTime } from "./viewShell.js";
 
 const params = new URLSearchParams(window.location.search);
@@ -65,6 +72,19 @@ function handleSyncMessage(data) {
 
   if (data.type === "JUMP_TO_TIME" && view === "demo") {
     seekActiveVideo(data.time);
+  }
+
+  if (data.type === "RESET_ZOOM" && view === "demo") {
+    resetActiveVideoZoom();
+  }
+
+  if (data.type === "SET_PLAYBACK_RATE") {
+    presentation.setPlaybackRate(data.playbackRate);
+    if (view === "demo") {
+      setActiveVideoPlaybackRate(state.playbackRate);
+    } else {
+      render();
+    }
   }
 
   if (data.type === "SET_DEBUG_HOTSPOTS") {
@@ -137,6 +157,19 @@ function resetTimer() {
   render();
 }
 
+function resetZoom() {
+  sync.broadcast("RESET_ZOOM", { sceneIndex: state.currentStep });
+}
+
+function setPlaybackRate(playbackRate) {
+  presentation.setPlaybackRate(playbackRate);
+  sync.broadcast("SET_PLAYBACK_RATE", {
+    sceneIndex: state.currentStep,
+    playbackRate: state.playbackRate
+  });
+  render();
+}
+
 function renderTimerOnly() {
   const timer = document.querySelector("[data-timer]");
   if (timer) timer.textContent = formatTime(state.remainingSec);
@@ -151,6 +184,7 @@ function renderControllerVideoStatusOnly() {
   videoStatus.innerHTML = `
     <span>Video ${currentTime}s / ${duration}s</span>
     <span>${state.videoStatus?.isPlaying ? "Playing" : "Paused"}</span>
+    <span>Speed ${formatPlaybackRate(state.playbackRate)}x</span>
     <span>Explain ${state.currentExplainStepId || "none"}</span>
   `;
 }
@@ -208,7 +242,8 @@ function render() {
       onPause: handleVideoPause,
       onNextScene: nextStep,
       onSyncExplain: syncExplain,
-      onPlaybackStateChange: handleVideoPlaybackStateChange
+      onPlaybackStateChange: handleVideoPlaybackStateChange,
+      playbackRate: state.playbackRate
     });
   } else if (view === "explain") {
     app.innerHTML = renderExplainView({ scene, scenes, state });
@@ -227,8 +262,10 @@ app.addEventListener("click", (event) => {
   if (action === "next") nextStep();
   if (action === "play-toggle") state.isPlaying ? pauseTimer() : startTimer();
   if (action === "reset") resetTimer();
+  if (action === "reset-zoom") resetZoom();
   if (action === "set-step") setStep(Number(control.dataset.step));
   if (action === "sync-explain") syncExplain(control.dataset.explainStepId);
+  if (action === "set-playback-rate") setPlaybackRate(Number(control.dataset.playbackRate));
   if (action === "toggle-debug-hotspots") {
     presentation.setDebugHotspots(!state.debugHotspots);
     sync.broadcast("SET_DEBUG_HOTSPOTS", { debugHotspots: state.debugHotspots });
@@ -244,3 +281,7 @@ window.addEventListener("keydown", (event) => {
 });
 
 render();
+
+function formatPlaybackRate(rate) {
+  return Number(rate || 1).toFixed(2).replace(/\.?0+$/, "");
+}

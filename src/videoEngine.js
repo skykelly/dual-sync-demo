@@ -8,7 +8,8 @@ export function mountVideoTimeline({
   onPause,
   onNextScene,
   onSyncExplain,
-  onPlaybackStateChange
+  onPlaybackStateChange,
+  playbackRate
 }) {
   resetVideoForScene();
 
@@ -16,16 +17,19 @@ export function mountVideoTimeline({
   if (!video || !scene?.demo) return;
 
   const frame = video.closest(".video-frame");
+  const videoLayer = document.querySelector("[data-video-layer]");
   const demo = scene.demo;
   const trim = normalizeTrim(demo.trim);
   const executedEventIds = new Set();
+  const executedZoomEventIds = new Set();
   const hotspotElements = Array.from(document.querySelectorAll("[data-hotspot-id]"));
   const listeners = [];
   let timeUpdateTimer = null;
   let didInitialSeek = false;
   let hasReachedTrimEnd = false;
 
-  video.playbackRate = Number.isFinite(demo.playbackRate) ? demo.playbackRate : 1;
+  setPlaybackRate(playbackRate ?? demo.playbackRate);
+  resetZoom(0);
 
   function addListener(target, eventName, handler) {
     target.addEventListener(eventName, handler);
@@ -72,6 +76,14 @@ export function mountVideoTimeline({
 
       executedEventIds.add(timeEvent.id);
       runTimeEvent(timeEvent);
+    }
+
+    for (const zoomEvent of demo.zoomEvents || []) {
+      if (!zoomEvent?.id || executedZoomEventIds.has(zoomEvent.id)) continue;
+      if (currentTime < zoomEvent.time) continue;
+
+      executedZoomEventIds.add(zoomEvent.id);
+      runZoomEvent(zoomEvent);
     }
 
     if (!hasReachedTrimEnd && Number.isFinite(trim.end) && currentTime >= trim.end) {
@@ -147,6 +159,40 @@ export function mountVideoTimeline({
     }
   }
 
+  function runZoomEvent(zoomEvent) {
+    applyZoom({
+      scale: zoomEvent.scale,
+      x: zoomEvent.x,
+      y: zoomEvent.y,
+      duration: zoomEvent.duration
+    });
+
+    if (zoomEvent.explainStepId) {
+      onSyncExplain(zoomEvent.explainStepId);
+    }
+  }
+
+  function applyZoom({ scale = 1, x = 50, y = 50, duration = 0.5 } = {}) {
+    if (!videoLayer) return;
+
+    const safeScale = getSafePositiveNumber(scale, 1);
+    const safeX = clampPercent(x, 50);
+    const safeY = clampPercent(y, 50);
+    const safeDuration = getSafeNonNegativeNumber(duration, 0.5);
+
+    videoLayer.style.transform = `scale(${safeScale})`;
+    videoLayer.style.transformOrigin = `${safeX}% ${safeY}%`;
+    videoLayer.style.transitionDuration = `${safeDuration}s`;
+  }
+
+  function resetZoom(duration = 0.5) {
+    applyZoom({ scale: 1, x: 50, y: 50, duration });
+  }
+
+  function setPlaybackRate(nextPlaybackRate) {
+    video.playbackRate = getSafePositiveNumber(nextPlaybackRate, getSafePositiveNumber(demo.playbackRate, 1));
+  }
+
   addListener(video, "loadedmetadata", () => {
     seekToTrimStart();
     updateHotspots();
@@ -191,6 +237,8 @@ export function mountVideoTimeline({
       updateHotspots(safeTime);
       broadcastVideoTime();
     },
+    resetZoom,
+    setPlaybackRate,
     cleanup() {
       if (timeUpdateTimer) window.clearInterval(timeUpdateTimer);
       listeners.forEach((removeListener) => removeListener());
@@ -218,6 +266,18 @@ export function seekActiveVideo(time) {
   return true;
 }
 
+export function resetActiveVideoZoom() {
+  if (!activeEngine) return false;
+  activeEngine.resetZoom();
+  return true;
+}
+
+export function setActiveVideoPlaybackRate(playbackRate) {
+  if (!activeEngine) return false;
+  activeEngine.setPlaybackRate(playbackRate);
+  return true;
+}
+
 export function resetVideoForScene() {
   if (!activeEngine) return;
   activeEngine.cleanup();
@@ -235,4 +295,20 @@ function clampTime(time, trim) {
   const numericTime = Number(time);
   if (!Number.isFinite(numericTime)) return trim.start;
   return Math.max(trim.start, Math.min(trim.end, numericTime));
+}
+
+function getSafePositiveNumber(value, fallback) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : fallback;
+}
+
+function getSafeNonNegativeNumber(value, fallback) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : fallback;
+}
+
+function clampPercent(value, fallback) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return fallback;
+  return Math.max(0, Math.min(100, numericValue));
 }

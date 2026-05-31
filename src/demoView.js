@@ -18,23 +18,25 @@ export function renderDemoView({ scene, scenes, state }) {
           <p class="subtitle">${scene.description}</p>
         </div>
         <div class="video-frame ${debugHotspots ? "debug-hotspots" : ""}" data-video="missing" data-debug-hotspots="${debugHotspots ? "true" : "false"}">
-          <video
-            class="demo-video"
-            data-demo-video
-            src="${demo.videoSrc}"
-            preload="metadata"
-            muted
-            playsinline
-            data-playback-rate="${demo.playbackRate}"
-            onloadeddata="this.parentElement.dataset.video='ready'"
-            onerror="this.parentElement.dataset.video='missing'"
-          ></video>
+          <div class="video-layer" data-video-layer>
+            <video
+              class="demo-video"
+              data-demo-video
+              src="${demo.videoSrc}"
+              preload="metadata"
+              muted
+              playsinline
+              data-playback-rate="${demo.playbackRate}"
+              onloadeddata="this.closest('.video-frame').dataset.video='ready'"
+              onerror="this.closest('.video-frame').dataset.video='missing'"
+            ></video>
+            <div class="hotspot-layer" aria-label="Demo interaction hotspots">
+              ${renderHotspots(demo.interactions)}
+            </div>
+          </div>
           <div class="video-fallback">
             <strong>Demo video placeholder</strong>
             <span>${demo.videoSrc} 파일이 없어도 발표 화면은 계속 표시됩니다.</span>
-          </div>
-          <div class="hotspot-layer" aria-label="Demo interaction hotspots">
-            ${renderHotspots(demo.interactions)}
           </div>
         </div>
         <div class="timeline-summary">

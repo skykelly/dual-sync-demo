@@ -9,6 +9,7 @@ export function createPresentationState(scenes) {
     currentExplainStepId: getDefaultExplainStepId(scenes[clampStep(initialStep, scenes)]),
     debugHotspots: localStorage.getItem(DEBUG_HOTSPOTS_STORAGE_KEY) === "true",
     isPlaying: false,
+    playbackRate: getScenePlaybackRate(scenes[clampStep(initialStep, scenes)]),
     timer: null,
     remainingSec: getSceneDurationSec(scenes[clampStep(initialStep, scenes)]),
     videoStatus: {
@@ -24,6 +25,7 @@ export function createPresentationState(scenes) {
     localStorage.setItem(STORAGE_KEY, String(state.currentStep));
     state.remainingSec = getSceneDurationSec(scenes[state.currentStep]);
     state.currentExplainStepId = getDefaultExplainStepId(scenes[state.currentStep]);
+    state.playbackRate = getScenePlaybackRate(scenes[state.currentStep]);
     state.videoStatus = {
       sceneIndex: state.currentStep,
       currentTime: scenes[state.currentStep]?.demo?.trim?.start || 0,
@@ -58,6 +60,10 @@ export function createPresentationState(scenes) {
     localStorage.setItem(DEBUG_HOTSPOTS_STORAGE_KEY, String(state.debugHotspots));
   }
 
+  function setPlaybackRate(playbackRate) {
+    state.playbackRate = getSafePlaybackRate(playbackRate, getScenePlaybackRate(scenes[state.currentStep]));
+  }
+
   function resetRemainingSec() {
     state.remainingSec = getSceneDurationSec(scenes[state.currentStep]);
   }
@@ -79,6 +85,7 @@ export function createPresentationState(scenes) {
     setExplainStep,
     setVideoStatus,
     setDebugHotspots,
+    setPlaybackRate,
     resetRemainingSec,
     clearTimer,
     setTimer
@@ -87,6 +94,15 @@ export function createPresentationState(scenes) {
 
 function getDefaultExplainStepId(scene) {
   return scene?.explain?.defaultStepId || scene?.explain?.steps?.[0]?.id || "";
+}
+
+function getScenePlaybackRate(scene) {
+  return getSafePlaybackRate(scene?.demo?.playbackRate, 1);
+}
+
+function getSafePlaybackRate(playbackRate, fallback) {
+  const numericRate = Number(playbackRate);
+  return Number.isFinite(numericRate) && numericRate > 0 ? numericRate : fallback;
 }
 
 export function clampStep(step, scenes) {

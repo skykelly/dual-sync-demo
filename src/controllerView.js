@@ -5,6 +5,8 @@ export function renderControllerView({ scene, scenes, state }) {
   const currentExplainStep = getExplainStep(scene, state.currentExplainStepId);
   const explainSteps = scene.explain?.steps || [];
   const videoStatus = state.videoStatus || {};
+  const playbackRates = [0.5, 0.75, 1, 1.25, 1.5];
+  const currentPlaybackRate = state.playbackRate || scene.demo.playbackRate || 1;
 
   return renderShell({
     label: "Controller",
@@ -21,6 +23,7 @@ export function renderControllerView({ scene, scenes, state }) {
             <button type="button" class="primary" data-action="next">Next →</button>
             <button type="button" data-action="play-toggle">${state.isPlaying ? "Pause" : "Play"}</button>
             <button type="button" data-action="reset">Reset Timer</button>
+            <button type="button" data-action="reset-zoom">Reset Zoom</button>
             <button
               type="button"
               class="${state.debugHotspots ? "active-toggle" : ""}"
@@ -31,7 +34,21 @@ export function renderControllerView({ scene, scenes, state }) {
           <div class="video-status" aria-label="Demo video status">
             <span>Video ${formatSeconds(videoStatus.currentTime || scene.demo.trim.start)} / ${formatSeconds(videoStatus.duration || scene.demo.trim.end)}</span>
             <span>${videoStatus.isPlaying ? "Playing" : "Paused"}</span>
+            <span>Speed ${formatPlaybackRate(currentPlaybackRate)}x</span>
             <span>Explain ${currentExplainStep.id || "none"}</span>
+          </div>
+          <div class="speed-control" aria-label="Playback speed">
+            <h2>Playback Speed</h2>
+            <div class="speed-buttons">
+              ${playbackRates.map((rate) => `
+                <button
+                  type="button"
+                  class="speed-button ${rate === currentPlaybackRate ? "active" : ""}"
+                  data-action="set-playback-rate"
+                  data-playback-rate="${rate}"
+                >${formatPlaybackRate(rate)}x</button>
+              `).join("")}
+            </div>
           </div>
           <div class="explain-control">
             <h2>Explain Steps</h2>
@@ -74,6 +91,10 @@ export function renderControllerView({ scene, scenes, state }) {
 
 function formatSeconds(seconds) {
   return `${Number(seconds || 0).toFixed(1).replace(".0", "")}s`;
+}
+
+function formatPlaybackRate(rate) {
+  return Number(rate || 1).toFixed(2).replace(/\.?0+$/, "");
 }
 
 function getExplainStep(scene, explainStepId) {

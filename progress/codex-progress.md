@@ -4,7 +4,7 @@ Use this file to track phase execution.
 
 ## Current Status
 
-- Step 5 complete: Demo View now renders time-ranged interaction hotspots, supports hotspot actions, and includes a Controller debug toggle.
+- Step 6 complete: Demo View now supports zoom events/reset zoom, and Controller can set playback speed.
 
 ## Completed Tasks
 
@@ -258,8 +258,57 @@ Notes:
 - The in-app Browser connector was attempted for browser-level verification, but it reported `Browser is not available: iab`. Static route checks and Node render checks were used instead.
 
 DONE: 05_hotspot_interactions.md
+
+### Step 6. Zoom In/Out and Playback Speed
+
+Completed on 2026-06-01.
+
+What changed:
+- Added a transformable `.video-layer` wrapper around the Demo View video and hotspot layer.
+- Video Timeline Engine now runs `scene.demo.zoomEvents` once when their `time` is reached.
+- Zoom events apply `scale`, percentage-based `x`/`y` transform origin, and `duration` as CSS transition duration.
+- Zoom events with `explainStepId` now sync Explain View through the existing `SYNC_EXPLAIN` flow.
+- Added `RESET_ZOOM` BroadcastChannel handling and a Controller `Reset Zoom` button.
+- Added Controller playback speed buttons for `0.5x`, `0.75x`, `1x`, `1.25x`, and `1.5x`.
+- Added `SET_PLAYBACK_RATE` BroadcastChannel handling so Demo View updates `video.playbackRate` immediately.
+- Added `state.playbackRate`; scene changes restore `scene.demo.playbackRate`, while Controller speed changes override the active scene default.
+- Controller now displays the currently selected playback rate.
+
+Changed files:
+- `src/app.js`
+- `src/controllerView.js`
+- `src/demoView.js`
+- `src/state.js`
+- `src/videoEngine.js`
+- `styles/styles.css`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for all files in `src/*.js` and `data/*.js`.
+- Rendered Controller, Demo, and Explain view HTML through Node with a stubbed `localStorage`.
+- Confirmed Controller rendering includes Reset Zoom and playback speed controls.
+- Confirmed Demo rendering includes the transformable video layer.
+- Confirmed playback rate override works and scene navigation restores the scene default playback rate.
+- Started a local static server with `python3 -m http.server 4173`.
+- Confirmed these static routes return `index.html` successfully:
+  - `http://127.0.0.1:4173/index.html?view=controller`
+  - `http://127.0.0.1:4173/index.html?view=demo`
+  - `http://127.0.0.1:4173/index.html?view=explain`
+
+Manual test notes:
+- Open `index.html?view=controller`, `index.html?view=demo`, and `index.html?view=explain` in separate browser windows.
+- In Controller, click each playback speed button and confirm Demo View video speed changes immediately.
+- Click `Next` or `Prev` and confirm playback speed returns to the new scene's `scene.demo.playbackRate`.
+- With a valid `assets/videos/demo.mp4`, play Demo View and confirm configured zoom events zoom the video layer at their configured times.
+- Confirm zoom events with `explainStepId` update Explain View.
+- Click `Reset Zoom` in Controller after a zoom event and confirm Demo View returns to scale `1`.
+- Confirm manual `Play`, `Pause`, `Next`, `Prev`, direct Explain Step selection, and Hotspots Debug still work.
+
+Notes:
+- The in-app Browser connector was attempted for browser-level verification, but it reported `Browser is not available: iab`. Static route checks and Node render checks were used instead.
+
+DONE: 06_zoom_and_speed.md
 - Completed at: 2026-06-01 00:04:20 KST
 
 DONE: 05_hotspot_interactions.md
 - Completed at: 2026년  6월  1일 월요일 00시 05분 02초 KST
-
