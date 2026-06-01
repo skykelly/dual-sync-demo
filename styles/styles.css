@@ -172,3 +172,47 @@ button.active-toggle { border-color: var(--red); background: var(--red-soft); co
   .author-grid { grid-template-columns: 1fr; }
   .author-video-control div { grid-template-columns: 1fr; }
 }
+
+.author-workspace h1 { font-size: clamp(34px, 3.6vw, 54px); }
+.author-toolbox, .author-timeline-card { margin-top: 18px; border: 1px solid var(--line); border-radius: 10px; background: #f9fafb; padding: 18px; }
+.author-toolbox { display: grid; gap: 14px; }
+.author-toolbox h2, .author-timeline-header h2 { margin: 0; font-size: 20px; color: var(--ink); }
+.author-toolbox p[data-author-tool-help] { margin: 0; color: #4b5563; font-weight: 800; }
+.author-tool-buttons { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.author-tool-button { min-height: 78px; display: grid; align-content: start; gap: 4px; text-align: left; border-radius: 10px; padding: 10px; background: white; }
+.author-tool-button strong { color: var(--ink); font-size: 14px; }
+.author-tool-button span { color: #6b7280; font-size: 11px; line-height: 1.25; }
+.author-tool-button.active { border-color: var(--red); background: var(--red-soft); box-shadow: 0 0 0 3px rgba(165,0,52,.1); }
+.author-tool-button.active strong, .author-tool-button.active span { color: var(--red); }
+.author-timeline-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.author-timeline { position: relative; display: grid; gap: 8px; user-select: none; }
+.author-ruler, .author-timeline-row { position: relative; min-height: 54px; border: 1px solid #d1d5db; border-radius: 8px; background: white; overflow: hidden; }
+.author-ruler { background: linear-gradient(180deg, #111827 0%, #1f2937 100%); color: white; cursor: pointer; }
+.author-ruler-tick { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); color: #d1d5db; font-size: 11px; font-weight: 900; pointer-events: none; }
+.author-ruler-tick i { display: block; width: 1px; height: 18px; margin: 0 auto 4px; background: rgba(255,255,255,.38); }
+.author-ruler-tick b { display: block; white-space: nowrap; }
+.author-trim-range { position: absolute; top: 25px; bottom: 8px; border: 2px solid #fbbf24; border-radius: 999px; background: rgba(251,191,36,.2); pointer-events: none; }
+.author-trim-handle { position: absolute; top: 22px; z-index: 5; width: 16px; height: 28px; padding: 0; border: 2px solid white; border-radius: 5px; background: #f59e0b; transform: translateX(-50%); cursor: ew-resize; }
+.author-playhead { position: absolute; top: 0; bottom: 0; z-index: 4; width: 2px; background: var(--red); transform: translateX(-50%); pointer-events: none; }
+.author-playhead::before { content: ""; position: absolute; top: 0; left: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--red); transform: translateX(-50%); }
+.author-timeline-row { display: grid; grid-template-columns: 120px minmax(0, 1fr); background: #f3f4f6; cursor: copy; }
+.author-track-label { display: flex; align-items: center; padding: 0 12px; border-right: 1px solid #d1d5db; color: #374151; font-size: 13px; font-weight: 900; background: #e5e7eb; }
+.author-track { position: relative; min-height: 54px; background: repeating-linear-gradient(90deg, #fff, #fff calc(10% - 1px), #eef2f7 10%); }
+.author-timeline-marker { position: absolute; top: 11px; min-width: 18px; height: 32px; overflow: hidden; border: 0; border-radius: 8px; padding: 0 9px; transform: translateX(-1px); color: white; font-size: 11px; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; cursor: grab; box-shadow: 0 7px 18px rgba(17,24,39,.18); }
+.author-timeline-marker:active { cursor: grabbing; }
+.author-timeline-marker.hotspot { background: #a50034; }
+.author-timeline-marker.zoom { background: #2563eb; }
+.author-timeline-marker.time { background: #059669; }
+.author-timeline-marker.is-selected { outline: 3px solid #fbbf24; outline-offset: 2px; }
+.author-hotspot.is-selected { border-color: #fbbf24; box-shadow: 0 0 0 4px rgba(251,191,36,.25); }
+.author-selected-summary { margin: 0 0 14px; border: 1px dashed var(--line); border-radius: 8px; background: #f9fafb; padding: 10px 12px; color: #4b5563; font-weight: 800; }
+
+@media (max-width: 1180px) {
+  .author-tool-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .author-tool-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .author-timeline-row { grid-template-columns: 1fr; }
+  .author-track-label { min-height: 34px; border-right: 0; border-bottom: 1px solid #d1d5db; }
+}
