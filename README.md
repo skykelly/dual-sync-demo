@@ -61,11 +61,13 @@ python3 -m http.server 4173
 2. `data/videos.js`에 영상 경로를 추가합니다.
 3. 개발 서버에서 `index.html?view=author`를 엽니다.
 4. 영상을 선택하고 `Load`를 누릅니다.
-5. 영상 재생 중 `Set Start`, `Set End`로 scene trim 구간을 잡습니다.
+5. 영상 재생 중 `Set Start`, `Set End`를 누르거나 Timeline의 노란 trim handle을 드래그해 scene trim 구간을 잡습니다.
 6. Scene title/description과 Explain Step을 작성합니다.
-7. 현재 time 기준으로 Time Event, Hotspot, Zoom Event를 추가합니다.
-8. `Generated Scene Entry`를 복사해 `data/scenes.js`의 `scenes` 배열에 붙여넣습니다.
-9. `node scripts/build-single-html.mjs`를 다시 실행해 발표용 `dist/index.html`을 갱신합니다.
+7. Toolbox에서 Hotspot, Zoom, Reset, Explain, Pause, Next 도구를 선택합니다.
+8. Timeline을 클릭해 선택한 도구를 현재 시간 축에 추가하고, Hotspot/Zoom은 영상 프레임 클릭 좌표를 함께 사용합니다.
+9. Timeline marker를 선택하거나 드래그해 시간 위치를 조정하고, 우측 Tool Settings에서 세부 값을 수정합니다.
+10. `Generated Scene Entry`를 복사해 `data/scenes.js`의 `scenes` 배열에 붙여넣습니다.
+11. `node scripts/build-single-html.mjs`를 다시 실행해 발표용 `dist/index.html`을 갱신합니다.
 
 ## 파일 역할
 
@@ -91,7 +93,7 @@ python3 -m http.server 4173
 - `src/controllerView.js`: 발표자 Controller 콘솔을 렌더링합니다. scene 이동, play/pause, jump, speed, zoom reset, hotspot debug, explain step 선택 UI를 포함합니다.
 - `src/demoView.js`: 시연 화면을 렌더링합니다. 영상 프레임, fallback message, hotspot layer, timeline summary를 표시합니다.
 - `src/explainView.js`: 설명 화면을 렌더링합니다. 현재 scene의 active explain step 내용을 표시합니다.
-- `src/authorView.js`: Authoring MVP 화면을 렌더링하고 동작을 연결합니다. 영상 클릭 좌표, hotspot, time event, zoom event JSON 생성을 지원합니다.
+- `src/authorView.js`: Authoring 화면을 렌더링하고 동작을 연결합니다. CapCut-style timeline, toolbox, 영상 클릭 좌표, hotspot, time event, zoom event JSON 생성을 지원합니다.
 - `src/viewShell.js`: 모든 View가 공유하는 상단바, 진행률, 타이머 표시 shell을 렌더링합니다.
 
 ### 스타일과 빌드

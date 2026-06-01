@@ -569,3 +569,34 @@ Manual test notes:
 - Open `index.html?view=author`.
 - Select a video from the manifest and confirm it loads.
 - Use `Set Start` and `Set End`, add explain steps, add events/hotspots/zoom events, then confirm the generated scene entry is suitable for `data/scenes.js`.
+
+
+### Authoring Timeline UI Update
+
+Completed on 2026-06-01.
+
+What changed:
+- Reworked Authoring View around a CapCut-style timeline with trim handles, playhead, and separate rows for interactions, zoom events, and time events.
+- Added a Toolbox for Select, Hotspot, Zoom, Reset, Explain, Pause, and Next tools.
+- Timeline clicks now add the active tool at the clicked time, while marker drag adjusts existing event timing.
+- Hotspot and Zoom tools use video-frame click coordinates and expose editable values in the right Tool Settings panel.
+- Updated README authoring workflow and rebuilt the single-file distribution.
+
+Changed files:
+- `src/authorView.js`
+- `styles/styles.css`
+- `README.md`
+- `dist/index.html`
+- `progress/codex-progress.md`
+
+Validation:
+- Ran JavaScript syntax checks with `node --check` for `data/*.js`, `src/*.js`, and `scripts/*.mjs`.
+- Rendered Controller, Demo, Explain, and Author views through Node smoke checks.
+- Ran `node scripts/build-single-html.mjs`.
+
+Manual test notes:
+- Open `index.html?view=author`.
+- Select a Toolbox item and click the Timeline to add that tool at a specific time.
+- Drag trim handles and event markers to confirm time updates in the generated JSON.
+- Click the video frame with Hotspot or Zoom selected and confirm coordinates populate Tool Settings and JSON.
+- Confirm `index.html?view=controller`, `index.html?view=demo`, and `index.html?view=explain` still render.
